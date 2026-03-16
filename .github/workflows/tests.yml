@@ -16,10 +16,30 @@ jobs:
   test:
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, windows-latest]
         node: ['lts/*', 'current']
     name: "Node ${{ matrix.node }} (${{ matrix.platform }})"
     runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: "Install dependencies"
+        run: npm ci
+      - name: "Lint"
+        run: npm run lint
+      - name: "Test"
+        run: npm test
+
+  test-macos:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        node: ['lts/*', 'current']
+    name: "Node ${{ matrix.node }} (macOS)"
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
