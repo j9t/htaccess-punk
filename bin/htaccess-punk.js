@@ -81,7 +81,7 @@ async function main() {
   ];
   if (failed) parts.push(styleText('red', `${failed} connection failure${failed !== 1 ? 's' : ''}`));
 
-  console.log(`\n${styleText('bold', 'Summary:')} ${urls.length} checked — ${parts.join(', ')}`);
+  console.log(`\n${styleText('bold', 'Summary:')} ${urls.length} checked—${parts.join(', ')}`);
 
   if (errors > 0 || failed > 0) process.exit(1);
 }
