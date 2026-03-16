@@ -7,13 +7,14 @@ import { check } from '../src/index.js';
 const { values, positionals } = parseArgs({
   options: {
     help: { type: 'boolean', short: 'h', default: false },
+    errors: { type: 'boolean', short: 'e', default: false },
   },
   allowPositionals: true,
   strict: true,
 });
 
 if (values.help) {
-  console.log(`Usage: htaccess-punk [directory]
+  console.log(`Usage: htaccess-punk [options] [directory]
 
 Check redirect targets in .htaccess files.
 
@@ -21,7 +22,8 @@ Arguments:
   directory  Directory to scan (default: current directory)
 
 Options:
-  -h, --help  Show this help`);
+  -e, --errors  Only show errors (HTTP 4xx+ and connection failures)
+  -h, --help    Show this help`);
   process.exit(0);
 }
 
@@ -56,7 +58,9 @@ async function main() {
         console.log(`Checking ${urls.length} unique target${urls.length !== 1 ? 's' : ''}…\n`);
       }
     },
-    onResult: formatResult,
+    onResult: values.errors
+      ? (result) => { if (result.error || result.status >= 400) formatResult(result); }
+      : formatResult,
   });
 
   if (!files.length) {

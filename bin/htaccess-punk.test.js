@@ -157,6 +157,32 @@ describe('CLI', () => {
     assert.strictEqual(status, 0);
   });
 
+  test('Lists `--errors` flag in help', () => {
+    const { stdout } = run(['--help']);
+    assert.ok(stdout.includes('--errors'));
+    assert.ok(stdout.includes('-e'));
+  });
+
+  test('Ensures `--errors` is accepted and produces summary', () => {
+    const noTargetsDir = path.join(tempDir, 'no_targets');
+    fs.mkdirSync(noTargetsDir, { recursive: true });
+    fs.writeFileSync(path.join(noTargetsDir, '.htaccess'), 'RedirectMatch 301 ^/old/(.*)$ https://example.com/$1\n');
+    const { stdout, status } = run(['--errors', noTargetsDir]);
+    assert.ok(stdout.includes('no checkable redirect targets'));
+    assert.strictEqual(status, 0);
+    fs.rmSync(noTargetsDir, { recursive: true, force: true });
+  });
+
+  test('Ensures `-e` is accepted as short form of `--errors`', () => {
+    const noTargetsDir = path.join(tempDir, 'no_targets_e');
+    fs.mkdirSync(noTargetsDir, { recursive: true });
+    fs.writeFileSync(path.join(noTargetsDir, '.htaccess'), 'RedirectMatch 301 ^/old/(.*)$ https://example.com/$1\n');
+    const { stdout, status } = run(['-e', noTargetsDir]);
+    assert.ok(stdout.includes('no checkable redirect targets'));
+    assert.strictEqual(status, 0);
+    fs.rmSync(noTargetsDir, { recursive: true, force: true });
+  });
+
   test('Reports no .htaccess files found for empty directory', () => {
     const emptyDir = path.join(tempDir, 'empty');
     fs.mkdirSync(emptyDir, { recursive: true });
