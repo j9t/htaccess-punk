@@ -1,0 +1,36 @@
+{
+  "author": "Jens Oliver Meiert",
+  "bin": {
+    "htaccess-punk": "bin/htaccess-punk.js"
+  },
+  "description": "Redirect target checker for .htaccess files",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "funding": "https://github.com/j9t/htaccess-punk?sponsor=1",
+  "homepage": "https://github.com/j9t/htaccess-punk",
+  "keywords": [
+    "checker",
+    "htaccess",
+    "http",
+    "links",
+    "redirects"
+  ],
+  "license": "MIT",
+  "name": "htaccess-punk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j9t/htaccess-punk.git"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.3"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "start": "node ./bin/htaccess-punk.js",
+    "test": "node --test bin/htaccess-punk.test.js"
+  },
+  "type": "module",
+  "version": "1.0.0"
+}
