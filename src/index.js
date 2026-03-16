@@ -74,12 +74,22 @@ export async function checkUrl(url) {
 
   try {
     while (chain.length < MAX_REDIRECTS) {
-      const res = await fetch(current, {
+      let res = await fetch(current, {
         method: 'HEAD',
         redirect: 'manual',
         signal: AbortSignal.timeout(TIMEOUT_MS),
         headers: { 'User-Agent': 'htaccess-punk/1.0' },
       });
+
+      // Some servers (e.g., Medium) block HEAD requests—fall back to GET
+      if (res.status === 403 || res.status === 405) {
+        res = await fetch(current, {
+          method: 'GET',
+          redirect: 'manual',
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+          headers: { 'User-Agent': 'htaccess-punk/1.0' },
+        });
+      }
 
       const status = res.status;
       const location = res.headers.get('location');
