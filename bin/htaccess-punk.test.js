@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert';
@@ -18,6 +18,43 @@ function run(args) {
     status: result.status,
   };
 }
+
+describe('Find .htaccess files', () => {
+	const tempDir = path.join(__dirname, 'temp_test_find');
+
+	before(() => {
+		fs.mkdirSync(path.join(tempDir, 'sub'), { recursive: true });
+		fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
+		fs.writeFileSync(path.join(tempDir, '.htaccess'), 'Redirect 301 /old/ https://example.com/');
+		fs.writeFileSync(path.join(tempDir, 'sub', '.htaccess'), 'Redirect 301 /old/ https://example.com/sub/');
+		fs.writeFileSync(path.join(tempDir, 'node_modules', '.htaccess'), 'Redirect 301 /old/ https://example.com/nm/');
+		fs.writeFileSync(path.join(tempDir, 'other.txt'), 'not an htaccess file');
+	});
+
+	after(() => {
+		fs.rmSync(tempDir, { recursive: true, force: true });
+	});
+
+	test('Finds .htaccess files recursively', async () => {
+		const files = await findHtaccessFiles(tempDir);
+		assert.strictEqual(files.length, 2);
+	});
+
+	test('Returns only .htaccess files', async () => {
+		const files = await findHtaccessFiles(tempDir);
+		assert.ok(files.every(f => path.basename(f) === '.htaccess'));
+	});
+
+	test('Skips node_modules', async () => {
+		const files = await findHtaccessFiles(tempDir);
+		assert.ok(files.every(f => !f.includes('node_modules')));
+	});
+
+	test('Returns empty array for missing directory', async () => {
+		const files = await findHtaccessFiles(path.join(tempDir, 'nonexistent'));
+		assert.deepStrictEqual(files, []);
+	});
+});
 
 describe('Extract targets', () => {
   test('Extracts Redirect targets', () => {
@@ -99,43 +136,6 @@ describe('Extract targets', () => {
   });
 });
 
-describe('Find .htaccess files', () => {
-  const tempDir = path.join(__dirname, 'temp_test_find');
-
-  before(() => {
-    fs.mkdirSync(path.join(tempDir, 'sub'), { recursive: true });
-    fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
-    fs.writeFileSync(path.join(tempDir, '.htaccess'), 'Redirect 301 /old/ https://example.com/');
-    fs.writeFileSync(path.join(tempDir, 'sub', '.htaccess'), 'Redirect 301 /old/ https://example.com/sub/');
-    fs.writeFileSync(path.join(tempDir, 'node_modules', '.htaccess'), 'Redirect 301 /old/ https://example.com/nm/');
-    fs.writeFileSync(path.join(tempDir, 'other.txt'), 'not an htaccess file');
-  });
-
-  after(() => {
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  });
-
-  test('Finds .htaccess files recursively', async () => {
-    const files = await findHtaccessFiles(tempDir);
-    assert.strictEqual(files.length, 2);
-  });
-
-  test('Returns only .htaccess files', async () => {
-    const files = await findHtaccessFiles(tempDir);
-    assert.ok(files.every(f => path.basename(f) === '.htaccess'));
-  });
-
-  test('Skips node_modules', async () => {
-    const files = await findHtaccessFiles(tempDir);
-    assert.ok(files.every(f => !f.includes('node_modules')));
-  });
-
-  test('Returns empty array for missing directory', async () => {
-    const files = await findHtaccessFiles(path.join(tempDir, 'nonexistent'));
-    assert.deepStrictEqual(files, []);
-  });
-});
-
 describe('CLI', () => {
   const tempDir = path.join(__dirname, 'temp_test_cli');
 
@@ -163,26 +163,6 @@ describe('CLI', () => {
     assert.ok(stdout.includes('-e'));
   });
 
-  test('Ensures `--errors` is accepted and produces summary', () => {
-    const noTargetsDir = path.join(tempDir, 'no_targets');
-    fs.mkdirSync(noTargetsDir, { recursive: true });
-    fs.writeFileSync(path.join(noTargetsDir, '.htaccess'), 'RedirectMatch 301 ^/old/(.*)$ https://example.com/$1\n');
-    const { stdout, status } = run(['--errors', noTargetsDir]);
-    assert.ok(stdout.includes('no checkable redirect targets'));
-    assert.strictEqual(status, 0);
-    fs.rmSync(noTargetsDir, { recursive: true, force: true });
-  });
-
-  test('Ensures `-e` is accepted as short form of `--errors`', () => {
-    const noTargetsDir = path.join(tempDir, 'no_targets_e');
-    fs.mkdirSync(noTargetsDir, { recursive: true });
-    fs.writeFileSync(path.join(noTargetsDir, '.htaccess'), 'RedirectMatch 301 ^/old/(.*)$ https://example.com/$1\n');
-    const { stdout, status } = run(['-e', noTargetsDir]);
-    assert.ok(stdout.includes('no checkable redirect targets'));
-    assert.strictEqual(status, 0);
-    fs.rmSync(noTargetsDir, { recursive: true, force: true });
-  });
-
   test('Reports no .htaccess files found for empty directory', () => {
     const emptyDir = path.join(tempDir, 'empty');
     fs.mkdirSync(emptyDir, { recursive: true });
@@ -205,5 +185,68 @@ describe('CLI', () => {
     const { stdout } = run([tempDir]);
     assert.ok(stdout.includes('Summary:'));
     assert.ok(stdout.includes('checked'));
+  });
+});
+
+describe('CLI `--errors` filtering', () => {
+  const filterDir = path.join(__dirname, 'temp_test_errors');
+  let serverProcess;
+  let port;
+
+  before(async () => {
+    fs.mkdirSync(filterDir, { recursive: true });
+
+    // The server runs in a separate process so `spawnSync` (used by `run()`) does
+    // not block its event loop; routes: 200, 301 → 200, 404, /fail (socket reset)
+    const serverScript = path.join(filterDir, '_server.js');
+    fs.writeFileSync(serverScript, [
+      "import { createServer } from 'node:http';",
+      'const server = createServer((req, res) => {',
+      "  if (req.url === '/status-200') { res.writeHead(200); res.end(); }",
+      "  else if (req.url === '/status-301') { res.writeHead(301, { Location: 'http://127.0.0.1:' + server.address().port + '/status-200' }); res.end(); }",
+      "  else if (req.url === '/status-404') { res.writeHead(404); res.end(); }",
+      "  else if (req.url === '/fail') { req.socket.destroy(); }",
+      "  else { res.writeHead(404); res.end(); }",
+      '});',
+      "server.listen(0, '127.0.0.1', () => process.stdout.write(server.address().port + '\\n'));",
+    ].join('\n'));
+
+    await new Promise((resolve, reject) => {
+      serverProcess = spawn('node', [serverScript], { stdio: ['ignore', 'pipe', 'inherit'] });
+      serverProcess.stdout.once('data', data => {
+        port = parseInt(data.toString().trim(), 10);
+        resolve();
+      });
+      serverProcess.once('error', reject);
+    });
+
+    fs.writeFileSync(path.join(filterDir, '.htaccess'), [
+      `Redirect 301 /a/ http://127.0.0.1:${port}/status-200`,
+      `Redirect 301 /b/ http://127.0.0.1:${port}/status-301`,
+      `Redirect 301 /c/ http://127.0.0.1:${port}/status-404`,
+      `Redirect 301 /d/ http://127.0.0.1:${port}/fail`,
+    ].join('\n'));
+  });
+
+  after(async () => {
+    serverProcess.kill();
+    await new Promise(resolve => serverProcess.once('exit', resolve));
+    fs.rmSync(filterDir, { recursive: true, force: true });
+  });
+
+  test('Ensures `--errors` shows 404 and connection failure but not 2xx or 3xx results', () => {
+    const { stdout } = run(['--errors', filterDir]);
+    assert.ok(stdout.includes('/status-404'), 'expected 404 result in output');
+    assert.ok(stdout.includes('/fail'), 'expected connection failure result in output');
+    assert.ok(!stdout.includes('/status-200'), 'unexpected 200 result in output');
+    assert.ok(!stdout.includes('/status-301'), 'unexpected 301 result in output');
+  });
+
+  test('Ensures `-e` shows 404 and connection failure but not 2xx or 3xx results', () => {
+    const { stdout } = run(['-e', filterDir]);
+    assert.ok(stdout.includes('/status-404'), 'expected 404 result in output');
+    assert.ok(stdout.includes('/fail'), 'expected connection failure result in output');
+    assert.ok(!stdout.includes('/status-200'), 'unexpected 200 result in output');
+    assert.ok(!stdout.includes('/status-301'), 'unexpected 301 result in output');
   });
 });
