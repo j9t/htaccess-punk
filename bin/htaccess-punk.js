@@ -51,11 +51,11 @@ async function main() {
   console.log(`Scanning ${resolve(dir)}…\n`);
 
   const { files, urls, urlToFiles, results } = await check(dir, {
-    onReady({ files, urls }) {
-      if (!files.length) return;
-      console.log(`Found ${files.length} .htaccess file${files.length !== 1 ? 's' : ''}\n`);
-      if (urls.length) {
-        console.log(`Checking ${urls.length} unique target${urls.length !== 1 ? 's' : ''}…\n`);
+    onReady({ files: foundFiles, urls: foundUrls }) {
+      if (!foundFiles.length) return;
+      console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''}\n`);
+      if (foundUrls.length) {
+        console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
       }
     },
   });
