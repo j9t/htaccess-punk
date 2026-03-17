@@ -93,10 +93,10 @@ async function main() {
     }
   }
 
-  let ok = 0, redirected = 0, errors = 0, failed = 0;
+  let ok = 0, redirected = 0, httpErrors = 0, failed = 0;
   for (const r of results) {
     if (r.error) failed++;
-    else if (r.status >= 400) errors++;
+    else if (r.status >= 400) httpErrors++;
     else if (r.status >= 300) redirected++;
     else ok++;
   }
@@ -104,13 +104,13 @@ async function main() {
   const parts = [
     styleText('green', `${ok} OK`),
     styleText('yellow', `${redirected} redirect${redirected !== 1 ? 's' : ''}`),
-    styleText('red', `${errors} error${errors !== 1 ? 's' : ''}`),
+    styleText('red', `${httpErrors} error${httpErrors !== 1 ? 's' : ''}`),
   ];
   if (failed) parts.push(styleText('red', `${failed} connection failure${failed !== 1 ? 's' : ''}`));
 
   console.log(`\n${styleText('bold', 'Summary:')} ${urls.length} checked—${parts.join(', ')}`);
 
-  if (errors > 0 || failed > 0) process.exit(1);
+  if (httpErrors > 0 || failed > 0) process.exit(1);
 }
 
 main().catch(err => {
