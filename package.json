@@ -23,6 +23,7 @@
     "url": "git+https://github.com/j9t/htaccess-punk.git"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "eslint": "^10.0.3"
   },
   "scripts": {
