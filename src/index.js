@@ -6,6 +6,10 @@ const CONCURRENCY = 5;
 const TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 10;
 
+const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
+const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
+const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/[^\s[]+)/i;
+
 export async function findHtaccessFiles(dir) {
   const files = [];
   let entries;
@@ -39,27 +43,21 @@ export function extractTargets(content) {
     // Redirect [status] <source> <target>
     // RedirectPermanent <source> <target>
     // RedirectTemp <source> <target>
-    const redirect = trimmed.match(
-      /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i
-    );
+    const redirect = trimmed.match(REDIRECT_RE);
     if (redirect) {
       targets.add(redirect[1]);
       continue;
     }
 
     // RedirectMatch [status] <pattern> <target>
-    const redirectMatch = trimmed.match(
-      /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i
-    );
+    const redirectMatch = trimmed.match(REDIRECT_MATCH_RE);
     if (redirectMatch && !redirectMatch[1].includes('$')) {
       targets.add(redirectMatch[1]);
       continue;
     }
 
     // RewriteRule <pattern> <target> [flags]
-    const rewrite = trimmed.match(
-      /^RewriteRule\s+\S+\s+(https?:\/\/[^\s[]+)/i
-    );
+    const rewrite = trimmed.match(REWRITE_RULE_RE);
     if (rewrite && !rewrite[1].includes('$') && !rewrite[1].includes('%')) {
       targets.add(rewrite[1]);
     }
@@ -132,18 +130,16 @@ export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, on
   const resolvedDir = resolve(dir);
   const files = await findHtaccessFiles(resolvedDir);
 
-  const allTargets = new Set();
   const urlToFiles = new Map();
-  for (const file of files) {
+  await Promise.all(files.map(async file => {
     const content = await readFile(file, 'utf8');
     for (const target of extractTargets(content)) {
-      allTargets.add(target);
       if (!urlToFiles.has(target)) urlToFiles.set(target, []);
       urlToFiles.get(target).push(file);
     }
-  }
+  }));
 
-  const urls = [...allTargets].sort();
+  const urls = [...urlToFiles.keys()].sort();
   onReady?.({ files, urls });
 
   const results = [];
