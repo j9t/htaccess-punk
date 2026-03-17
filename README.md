@@ -57,6 +57,6 @@ await check(dir, {
 2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
 3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can't be checked without it
 4. **deduplicates** targets across all files
-5. **checks** each unique URL with a HEAD request, following redirect chains up to 10 hops, and reports the final HTTP status
+5. **checks** each unique URL with a HEAD request (falling back to GET if the server returns 403 or 405), following redirect chains up to 10 hops, and reports the final HTTP status
 
 Results are printed as they come in, with the final status color-coded: green for 2xx, yellow for 3xx (further redirect from the final hop, e.g. a loop or exceeded redirect limit), red for 4xx/5xx. When a target redirected before settling, the final URL is shown below it.
