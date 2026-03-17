@@ -1,6 +1,6 @@
 # .htaccess Punk
 
-<!-- [![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) --> [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/html-minifier-next/actions) <!-- [![Socket](https://badge.socket.dev/npm/package/html-minifier-next)](https://socket.dev/npm/package/htaccess-punk) -->
+<!-- [![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) --> [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/htaccess-punk/actions) <!-- [![Socket](https://badge.socket.dev/npm/package/htaccess-punk)](https://socket.dev/npm/package/htaccess-punk) -->
 
 .htaccess Punk checks the redirect targets defined in `.htaccess` files—following redirect chains to verify where they ultimately resolve and what HTTP status they return.
 
