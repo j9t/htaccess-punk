@@ -53,7 +53,7 @@ async function main() {
   const { files, urls, urlToFiles, results } = await check(dir, {
     onReady({ files: foundFiles, urls: foundUrls }) {
       if (!foundFiles.length || !foundUrls.length) return;
-      console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''} 📂\n`);
+      console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''} 📂\n`); // eslint-disable-line no-irregular-whitespace
       console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
     },
   });
