@@ -110,7 +110,7 @@ async function main() {
 
   console.log(`\n${styleText('bold', 'Summary:')} ${urls.length} checked—${parts.join(', ')}`);
 
-  if (httpErrors > 0 || failed > 0) process.exit(1);
+  if (httpErrors > 0 || failed > 0) process.exitCode = 1;
 }
 
 main().catch(err => {
