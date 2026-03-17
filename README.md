@@ -8,7 +8,7 @@
 
 ### CLI Use
 
-```
+```shell
 npx htaccess-punk [options] [directory]
 ```
 
@@ -21,7 +21,7 @@ npx htaccess-punk [options] [directory]
 
 ### Programmatic Use
 
-```js
+```javascript
 import { check } from 'htaccess-punk';
 
 const { files, urls, results } = await check('/path/to/dir');
@@ -29,7 +29,7 @@ const { files, urls, results } = await check('/path/to/dir');
 
 `results` is an array of objects:
 
-```js
+```javascript
 {
   url,      // original target URL
   status,   // final HTTP status code
@@ -41,7 +41,7 @@ const { files, urls, results } = await check('/path/to/dir');
 
 `check()` also accepts an options object:
 
-```js
+```javascript
 await check(dir, {
   concurrency: 5,               // parallel requests (default: 5)
   onReady({ files, urls }) {},  // called after files are found and targets extracted
