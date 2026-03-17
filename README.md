@@ -16,7 +16,7 @@ npx htaccess-punk [options] [directory]
 
 | Option | Short | Description |
 |---|---|---|
-| `--errors` | `-e` | Only show errors (HTTP 4xx+ and connection failures) |
+| `--errors` | `-e` | Show only error results (HTTP 4xx+ and connection failures); summary still reflects all checked URLs |
 | `--help` | `-h` | Show usage information |
 
 ### Programmatic Use

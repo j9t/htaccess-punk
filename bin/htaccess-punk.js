@@ -22,7 +22,7 @@ Arguments:
   directory  Directory to scan (default: current directory)
 
 Options:
-  -e, --errors  Only show errors (HTTP 4xx+ and connection failures)
+  -e, --errors  Show only error results (HTTP 4xx+ and connection failures); summary still reflects all checked URLs
   -h, --help    Show this help`);
   process.exit(0);
 }
@@ -52,11 +52,9 @@ async function main() {
 
   const { files, urls, urlToFiles, results } = await check(dir, {
     onReady({ files: foundFiles, urls: foundUrls }) {
-      if (!foundFiles.length) return;
+      if (!foundFiles.length || !foundUrls.length) return;
       console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''}\n`);
-      if (foundUrls.length) {
-        console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
-      }
+      console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
     },
   });
 
