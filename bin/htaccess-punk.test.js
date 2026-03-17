@@ -213,11 +213,20 @@ describe('CLI `--errors` filtering', () => {
 
     await new Promise((resolve, reject) => {
       serverProcess = spawn('node', [serverScript], { stdio: ['ignore', 'pipe', 'inherit'] });
+
+      const timeout = setTimeout(() => reject(new Error('Server startup timed out')), 5000);
+      const onExit = code => { clearTimeout(timeout); reject(new Error(`Server exited unexpectedly with code ${code}`)); };
+      const onError = err => { clearTimeout(timeout); reject(err); };
+
+      serverProcess.once('exit', onExit);
+      serverProcess.once('error', onError);
       serverProcess.stdout.once('data', data => {
+        clearTimeout(timeout);
+        serverProcess.off('exit', onExit);
+        serverProcess.off('error', onError);
         port = parseInt(data.toString().trim(), 10);
         resolve();
       });
-      serverProcess.once('error', reject);
     });
 
     fs.writeFileSync(path.join(filterDir, '.htaccess'), [
@@ -229,24 +238,28 @@ describe('CLI `--errors` filtering', () => {
   });
 
   after(async () => {
-    serverProcess.kill();
-    await new Promise(resolve => serverProcess.once('exit', resolve));
+    await new Promise(resolve => {
+      serverProcess.once('exit', resolve);
+      serverProcess.kill('SIGKILL');
+    });
     fs.rmSync(filterDir, { recursive: true, force: true });
   });
 
   test('Ensures `--errors` shows 404 and connection failure but not 2xx or 3xx results', () => {
-    const { stdout } = run(['--errors', filterDir]);
+    const { stdout, status } = run(['--errors', filterDir]);
     assert.ok(stdout.includes('/status-404'), 'expected 404 result in output');
     assert.ok(stdout.includes('/fail'), 'expected connection failure result in output');
     assert.ok(!stdout.includes('/status-200'), 'unexpected 200 result in output');
     assert.ok(!stdout.includes('/status-301'), 'unexpected 301 result in output');
+    assert.strictEqual(status, 1);
   });
 
   test('Ensures `-e` shows 404 and connection failure but not 2xx or 3xx results', () => {
-    const { stdout } = run(['-e', filterDir]);
+    const { stdout, status } = run(['-e', filterDir]);
     assert.ok(stdout.includes('/status-404'), 'expected 404 result in output');
     assert.ok(stdout.includes('/fail'), 'expected connection failure result in output');
     assert.ok(!stdout.includes('/status-200'), 'unexpected 200 result in output');
     assert.ok(!stdout.includes('/status-301'), 'unexpected 301 result in output');
+    assert.strictEqual(status, 1);
   });
 });
