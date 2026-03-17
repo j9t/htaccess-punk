@@ -34,8 +34,8 @@ const { files, urls, results } = await check('/path/to/dir');
   url,      // original target URL
   status,   // final HTTP status code
   finalUrl, // final URL after following redirects (null if no redirects)
-  chain,    // array of { url, status } for each hop
-  error,    // error message if the request failed (status and chain absent)
+  chain,    // array of `{ url, status }` for each hop
+  error,    // error message if the request failed (`status` and `finalUrl` absent)
 }
 ```
 
