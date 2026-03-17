@@ -3,7 +3,7 @@
   "bin": {
     "htaccess-punk": "bin/htaccess-punk.js"
   },
-  "description": "Redirect target checker for .htaccess files",
+  "description": "Redirect checker for .htaccess files",
   "exports": {
     ".": "./src/index.js"
   },
@@ -23,7 +23,9 @@
     "url": "git+https://github.com/j9t/htaccess-punk.git"
   },
   "devDependencies": {
-    "eslint": "^10.0.3"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0"
   },
   "scripts": {
     "lint": "eslint .",
@@ -32,5 +34,5 @@
     "test": "node --test bin/htaccess-punk.test.js"
   },
   "type": "module",
-  "version": "1.0.0"
+  "version": "1.1.0"
 }
