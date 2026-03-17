@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert';
 import { stripVTControlCharacters } from 'node:util';
-import { extractTargets, findHtaccessFiles } from '../src/index.js';
+import { check, extractTargets, findHtaccessFiles } from '../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(__dirname, 'htaccess-punk.js');
 
 function run(args) {
-  const result = spawnSync('node', [scriptPath, ...args], { encoding: 'utf-8' });
+  const result = spawnSync('node', [scriptPath, ...args], { encoding: 'utf-8', timeout: 30_000 });
   return {
     stdout: stripVTControlCharacters(result.stdout),
     stderr: stripVTControlCharacters(result.stderr),
@@ -20,40 +20,40 @@ function run(args) {
 }
 
 describe('Find .htaccess files', () => {
-	const tempDir = path.join(__dirname, 'temp_test_find');
+  const tempDir = path.join(__dirname, 'temp_test_find');
 
-	before(() => {
-		fs.mkdirSync(path.join(tempDir, 'sub'), { recursive: true });
-		fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
-		fs.writeFileSync(path.join(tempDir, '.htaccess'), 'Redirect 301 /old/ https://example.com/');
-		fs.writeFileSync(path.join(tempDir, 'sub', '.htaccess'), 'Redirect 301 /old/ https://example.com/sub/');
-		fs.writeFileSync(path.join(tempDir, 'node_modules', '.htaccess'), 'Redirect 301 /old/ https://example.com/nm/');
-		fs.writeFileSync(path.join(tempDir, 'other.txt'), 'not an htaccess file');
-	});
+  before(() => {
+    fs.mkdirSync(path.join(tempDir, 'sub'), { recursive: true });
+    fs.mkdirSync(path.join(tempDir, 'node_modules'), { recursive: true });
+    fs.writeFileSync(path.join(tempDir, '.htaccess'), 'Redirect 301 /old/ https://example.com/');
+    fs.writeFileSync(path.join(tempDir, 'sub', '.htaccess'), 'Redirect 301 /old/ https://example.com/sub/');
+    fs.writeFileSync(path.join(tempDir, 'node_modules', '.htaccess'), 'Redirect 301 /old/ https://example.com/nm/');
+    fs.writeFileSync(path.join(tempDir, 'other.txt'), 'not an htaccess file');
+  });
 
-	after(() => {
-		fs.rmSync(tempDir, { recursive: true, force: true });
-	});
+  after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
 
-	test('Finds .htaccess files recursively', async () => {
-		const files = await findHtaccessFiles(tempDir);
-		assert.strictEqual(files.length, 2);
-	});
+  test('Finds .htaccess files recursively', async () => {
+    const files = await findHtaccessFiles(tempDir);
+    assert.strictEqual(files.length, 2);
+  });
 
-	test('Returns only .htaccess files', async () => {
-		const files = await findHtaccessFiles(tempDir);
-		assert.ok(files.every(f => path.basename(f) === '.htaccess'));
-	});
+  test('Returns only .htaccess files', async () => {
+    const files = await findHtaccessFiles(tempDir);
+    assert.ok(files.every(f => path.basename(f) === '.htaccess'));
+  });
 
-	test('Skips node_modules', async () => {
-		const files = await findHtaccessFiles(tempDir);
-		assert.ok(files.every(f => !f.includes('node_modules')));
-	});
+  test('Skips node_modules', async () => {
+    const files = await findHtaccessFiles(tempDir);
+    assert.ok(files.every(f => !f.includes('node_modules')));
+  });
 
-	test('Returns empty array for missing directory', async () => {
-		const files = await findHtaccessFiles(path.join(tempDir, 'nonexistent'));
-		assert.deepStrictEqual(files, []);
-	});
+  test('Returns empty array for missing directory', async () => {
+    const files = await findHtaccessFiles(path.join(tempDir, 'nonexistent'));
+    assert.deepStrictEqual(files, []);
+  });
 });
 
 describe('Extract targets', () => {
@@ -136,6 +136,32 @@ describe('Extract targets', () => {
   });
 });
 
+describe('check() programmatic API', () => {
+  const tempDir = path.join(__dirname, 'temp_test_check_api');
+
+  before(() => {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(path.join(tempDir, '.htaccess'), [
+      'Redirect 301 /a/ http://127.0.0.1:1/foo',
+      'Redirect 301 /b/ http://127.0.0.1:1/foo',
+      'Redirect 301 /c/ http://127.0.0.1:1/bar',
+    ].join('\n'));
+  });
+
+  after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  test('Returns urlToFiles mapping target URLs to their source files', async () => {
+    const { urlToFiles, files } = await check(tempDir);
+    assert.ok(urlToFiles instanceof Map);
+    assert.strictEqual(urlToFiles.size, 2); // /foo deduplicated, /bar
+    for (const fileList of urlToFiles.values()) {
+      assert.ok(fileList.every(f => files.includes(f)));
+    }
+  });
+});
+
 describe('CLI', () => {
   const tempDir = path.join(__dirname, 'temp_test_cli');
 
@@ -168,7 +194,7 @@ describe('CLI', () => {
     fs.mkdirSync(emptyDir, { recursive: true });
     const { stdout } = run([emptyDir]);
     assert.ok(stdout.includes('No .htaccess files found'));
-    fs.rmdirSync(emptyDir);
+    fs.rmSync(emptyDir, { recursive: true, force: true });
   });
 
   test('Finds and scans .htaccess files', () => {
