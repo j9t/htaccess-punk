@@ -3,7 +3,7 @@
   "bin": {
     "htaccess-punk": "bin/htaccess-punk.js"
   },
-  "description": "Redirect target checker for .htaccess files",
+  "description": "Redirect checker for .htaccess files",
   "exports": {
     ".": "./src/index.js"
   },

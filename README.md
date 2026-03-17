@@ -2,7 +2,7 @@
 
 <!-- [![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) --> [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/htaccess-punk/actions) <!-- [![Socket](https://badge.socket.dev/npm/package/htaccess-punk)](https://socket.dev/npm/package/htaccess-punk) -->
 
-.htaccess Punk checks the redirect targets defined in `.htaccess` files—following redirect chains to verify where they ultimately resolve and what HTTP status they return.
+.htaccess Punk checks the redirect targets defined in `.htaccess` files. It follows redirect chains to verify where they ultimately resolve and what HTTP status they return, thus helping to fight redirect rot.
 
 ## Usage
 
@@ -55,7 +55,7 @@ await check(dir, {
 
 1. **finds** all `.htaccess` files in the given directory, recursively (skipping `node_modules` and `.git`)
 2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
-3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can't be checked without it
+3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can’t be checked without it
 4. **deduplicates** targets across all files
 5. **checks** each unique URL with a HEAD request (falling back to GET if the server returns 403 or 405), following redirect chains up to 10 hops, and reports the final HTTP status
 
