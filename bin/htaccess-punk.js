@@ -68,12 +68,9 @@ async function main() {
     return;
   }
 
-  const resultByUrl = new Map(results.map(r => [r.url, r]));
   const fileToResults = new Map();
-  for (const [url, fileList] of urlToFiles) {
-    const result = resultByUrl.get(url);
-    if (!result) continue;
-    for (const file of fileList) {
+  for (const result of results) {
+    for (const file of urlToFiles.get(result.url) ?? []) {
       if (!fileToResults.has(file)) fileToResults.set(file, []);
       fileToResults.get(file).push(result);
     }
@@ -96,10 +93,13 @@ async function main() {
     }
   }
 
-  const ok = results.filter(r => !r.error && r.status >= 200 && r.status < 300).length;
-  const redirected = results.filter(r => !r.error && r.status >= 300 && r.status < 400).length;
-  const errors = results.filter(r => !r.error && r.status >= 400).length;
-  const failed = results.filter(r => r.error).length;
+  let ok = 0, redirected = 0, errors = 0, failed = 0;
+  for (const r of results) {
+    if (r.error) failed++;
+    else if (r.status >= 400) errors++;
+    else if (r.status >= 300) redirected++;
+    else ok++;
+  }
 
   const parts = [
     styleText('green', `${ok} OK`),
