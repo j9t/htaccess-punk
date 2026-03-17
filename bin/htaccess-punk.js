@@ -69,7 +69,7 @@ async function main() {
   }
 
   const fileToResults = new Map();
-  for (const result of results) {
+  for (const result of [...results].sort((a, b) => (a.url < b.url ? -1 : 1))) {
     for (const file of urlToFiles.get(result.url) ?? []) {
       if (!fileToResults.has(file)) fileToResults.set(file, []);
       fileToResults.get(file).push(result);
