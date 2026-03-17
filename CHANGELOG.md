@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Tightened ESLint configuration—based it on `eslint:recommended`, replaced manual globals with `globals.node`, promoted all warnings to errors, added `no-shadow`, `no-var`, and `prefer-const` rules
+* Moved regex constants to module scope
+* Parallelized `.htaccess` file reads in `check()`
+* Replaced four-pass summary counting with a single loop
+* Removed redundant intermediate `allTargets` Set now that `urlToFiles` covers the same data
 
 ## [1.0.0] - 2026-03-16
 
