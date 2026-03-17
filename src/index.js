@@ -133,10 +133,13 @@ export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, on
   const files = await findHtaccessFiles(resolvedDir);
 
   const allTargets = new Set();
+  const urlToFiles = new Map();
   for (const file of files) {
     const content = await readFile(file, 'utf8');
     for (const target of extractTargets(content)) {
       allTargets.add(target);
+      if (!urlToFiles.has(target)) urlToFiles.set(target, []);
+      urlToFiles.get(target).push(file);
     }
   }
 
@@ -152,5 +155,5 @@ export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, on
 
   await runPool(tasks, concurrency);
 
-  return { dir: resolvedDir, files, urls, results };
+  return { dir: resolvedDir, files, urls, urlToFiles, results };
 }

@@ -50,7 +50,7 @@ function formatResult({ url, status, finalUrl, chain, error }) {
 async function main() {
   console.log(`Scanning ${resolve(dir)}…\n`);
 
-  const { files, urls, results } = await check(dir, {
+  const { files, urls, urlToFiles, results } = await check(dir, {
     onReady({ files, urls }) {
       if (!files.length) return;
       console.log(`Found ${files.length} .htaccess file${files.length !== 1 ? 's' : ''}\n`);
@@ -58,9 +58,6 @@ async function main() {
         console.log(`Checking ${urls.length} unique target${urls.length !== 1 ? 's' : ''}…\n`);
       }
     },
-    onResult: values.errors
-      ? (result) => { if (result.error || result.status >= 400) formatResult(result); }
-      : formatResult,
   });
 
   if (!files.length) {
@@ -71,6 +68,27 @@ async function main() {
   if (!urls.length) {
     console.log(`Found ${files.length} .htaccess file${files.length !== 1 ? 's' : ''} with no checkable redirect targets.`);
     return;
+  }
+
+  const resultByUrl = new Map(results.map(r => [r.url, r]));
+  let firstSection = true;
+
+  for (const file of files) {
+    const fileUrls = urls.filter(url => urlToFiles.get(url)?.includes(file));
+    if (!fileUrls.length) continue;
+
+    const fileResults = fileUrls.map(url => resultByUrl.get(url)).filter(Boolean);
+    const toShow = values.errors
+      ? fileResults.filter(r => r.error || r.status >= 400)
+      : fileResults;
+    if (!toShow.length) continue;
+
+    if (!firstSection) console.log('');
+    firstSection = false;
+    console.log(styleText('bold', file));
+    for (const result of toShow) {
+      formatResult(result);
+    }
   }
 
   const ok = results.filter(r => !r.error && r.status >= 200 && r.status < 300).length;
