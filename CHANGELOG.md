@@ -8,11 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- Added `--errors`/`-e` flag to only show errors (HTTP 4xx+ and connection failures), suppressing successful and redirected results
-- Grouped results by `.htaccess` file
+* Added `--errors`/`-e` flag to only show errors (HTTP 4xx+ and connection failures), suppressing successful and redirected results
+* Grouped results by `.htaccess` file
+
+### Changed
+
+* Tightened ESLint configuration—based it on `eslint:recommended`, replaced manual globals with `globals.node`, promoted all warnings to errors, added `no-shadow`, `no-var`, and `prefer-const` rules
 
 ## [1.0.0] - 2026-03-16
 
 ### Added
 
-- Shipped initial release with redirect target checking for `.htaccess` files
+* Shipped initial release with redirect target checking for `.htaccess` files
