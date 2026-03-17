@@ -69,13 +69,20 @@ async function main() {
   }
 
   const resultByUrl = new Map(results.map(r => [r.url, r]));
+  const fileToResults = new Map();
+  for (const [url, fileList] of urlToFiles) {
+    const result = resultByUrl.get(url);
+    if (!result) continue;
+    for (const file of fileList) {
+      if (!fileToResults.has(file)) fileToResults.set(file, []);
+      fileToResults.get(file).push(result);
+    }
+  }
+
   let firstSection = true;
 
   for (const file of files) {
-    const fileUrls = urls.filter(url => urlToFiles.get(url)?.includes(file));
-    if (!fileUrls.length) continue;
-
-    const fileResults = fileUrls.map(url => resultByUrl.get(url)).filter(Boolean);
+    const fileResults = fileToResults.get(file) ?? [];
     const toShow = values.errors
       ? fileResults.filter(r => r.error || r.status >= 400)
       : fileResults;
