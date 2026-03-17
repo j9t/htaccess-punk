@@ -8,7 +8,7 @@ const MAX_REDIRECTS = 10;
 
 const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
 const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
-const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/[^\s[]+)/i;
+const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/\S+?)(?=\s|#|$)/i;
 
 export async function findHtaccessFiles(dir) {
   const files = [];

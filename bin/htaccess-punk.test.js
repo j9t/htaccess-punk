@@ -102,6 +102,11 @@ describe('Extract targets', () => {
     assert.deepStrictEqual([...targets], []);
   });
 
+  test('Extracts RewriteRule targets with IPv6 hosts', () => {
+    const targets = extractTargets('RewriteRule ^(.*)$ https://[2001:db8::1]/foo [L]');
+    assert.deepStrictEqual([...targets], ['https://[2001:db8::1]/foo']);
+  });
+
   test('Skips comment lines', () => {
     const targets = extractTargets('# Redirect 301 /old/ https://example.com/new/');
     assert.deepStrictEqual([...targets], []);
