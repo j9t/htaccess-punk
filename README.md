@@ -1,28 +1,25 @@
 # .htaccess Punk
 
+<!-- [![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) --> [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/html-minifier-next/actions) <!-- [![Socket](https://badge.socket.dev/npm/package/html-minifier-next)](https://socket.dev/npm/package/htaccess-punk) -->
+
 .htaccess Punk checks the redirect targets defined in `.htaccess` files—following redirect chains to verify where they ultimately resolve and what HTTP status they return.
 
 ## Usage
 
+### CLI Use
+
 ```
-npx htaccess-punk [directory]
+npx htaccess-punk [options] [directory]
 ```
 
 `directory` defaults to the current working directory. .htaccess Punk scans it recursively.
 
-## How It Works
+| Option | Short | Description |
+|---|---|---|
+| `--errors` | `-e` | Only show errors (HTTP 4xx+ and connection failures) |
+| `--help` | `-h` | Show usage information |
 
-.htaccess Punk:
-
-1. **finds** all `.htaccess` files in the given directory, recursively (skipping `node_modules` and `.git`)
-2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
-3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can't be checked without it
-4. **deduplicates** targets across all files
-5. **checks** each unique URL with a HEAD request, following redirect chains up to 10 hops, and reports the final HTTP status
-
-Results are printed as they come in, with the final status color-coded: green for 2xx, yellow for 3xx (further redirect from the final hop, e.g. a loop or exceeded redirect limit), red for 4xx/5xx. When a target redirected before settling, the final URL is shown below it.
-
-## Programmatic Use
+### Programmatic Use
 
 ```js
 import { check } from 'htaccess-punk';
@@ -51,3 +48,15 @@ await check(dir, {
   onResult(result) {},          // called for each result as it comes in
 });
 ```
+
+## How It Works
+
+.htaccess Punk:
+
+1. **finds** all `.htaccess` files in the given directory, recursively (skipping `node_modules` and `.git`)
+2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
+3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can't be checked without it
+4. **deduplicates** targets across all files
+5. **checks** each unique URL with a HEAD request, following redirect chains up to 10 hops, and reports the final HTTP status
+
+Results are printed as they come in, with the final status color-coded: green for 2xx, yellow for 3xx (further redirect from the final hop, e.g. a loop or exceeded redirect limit), red for 4xx/5xx. When a target redirected before settling, the final URL is shown below it.
