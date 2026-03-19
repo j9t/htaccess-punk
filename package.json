@@ -10,10 +10,13 @@
   "funding": "https://github.com/j9t/htaccess-punk?sponsor=1",
   "homepage": "https://github.com/j9t/htaccess-punk",
   "keywords": [
+    "apache",
+    "check",
     "checker",
     "htaccess",
     "http",
     "links",
+    "quality",
     "redirects"
   ],
   "license": "MIT",
