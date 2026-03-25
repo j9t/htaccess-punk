@@ -4,6 +4,9 @@
     "htaccess-punk": "bin/htaccess-punk.js"
   },
   "description": "Redirect checker for .htaccess files",
+  "engines" : { 
+    "node" : ">=14.0.0"
+  },
   "exports": {
     ".": "./src/index.js"
   },
