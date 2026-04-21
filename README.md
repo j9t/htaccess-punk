@@ -1,6 +1,6 @@
 # .htaccess Punk
 
-[![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/htaccess-punk/actions) [![Socket](https://badge.socket.dev/npm/package/htaccess-punk)](https://socket.dev/npm/package/htaccess-punk)
+[![npm version](https://img.shields.io/npm/v/htaccess-punk.svg)](https://www.npmjs.com/package/htaccess-punk) [![Build status](https://github.com/j9t/htaccess-punk/workflows/Tests/badge.svg)](https://github.com/j9t/htaccess-punk/actions) [![Socket](https://badge.socket.dev/npm/package/htaccess-punk)](https://socket.dev/npm/package/htaccess-punk) [![GitHub Sponsors](https://badgen.net/static/Support/Open%20Source/cyan)](https://github.com/j9t/htaccess-punk?sponsor=1)
 
 .htaccess Punk checks the redirect targets defined in `.htaccess` files. It follows redirect chains to verify where they ultimately resolve and what HTTP status they return, thus helping to fight redirect rot.
 
@@ -67,4 +67,4 @@ You might like some of my other work:
 
 * Optimization tools: [HTML Minifier Next](https://github.com/j9t/html-minifier-next) · [ObsoHTML](https://github.com/j9t/obsohtml) · [Image Guard](https://github.com/j9t/image-guard) · [Compressor.js Next](https://github.com/j9t/compressorjs-next) · .htaccess Punk
 * Defense tools: [IA Defensa](https://iadefensa.com/solutions/)
-* Resources for quality web development: [Articles](https://meiert.com/topics/development/) · [Books](https://meiert.com/topics/books/) (recommended: [_On Web Development II_](https://meiert.com/blog/on-web-development-2/)) · [News](https://frontenddogma.com/) · [Terminology](https://webglossary.info/)
+* Resources for quality web development: [Articles](https://meiert.com/topics/development/) · [Books](https://meiert.com/topics/books/) (including [_On Web Development_](https://meiert.com/blog/on-web-development-2/)) · [News](https://frontenddogma.com/) · [Terminology](https://webglossary.info/)
