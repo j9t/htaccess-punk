@@ -5,7 +5,7 @@ export default [
   {
     ignores: ['node_modules/**']
   },
-	js.configs.recommended,
+  js.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: 'latest',
