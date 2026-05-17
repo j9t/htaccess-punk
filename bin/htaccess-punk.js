@@ -29,7 +29,7 @@ Options:
 
 const dir = positionals[0] || '.';
 
-function formatResult({ url, status, finalUrl, chain, error }) {
+function formatResult({ url, status, urlFinal, chain, error }) {
   if (error) {
     process.stdout.write(`${styleText('red', 'ERR')}  ${url}\n     ${styleText('dim', error)}\n`);
     return;
@@ -41,7 +41,7 @@ function formatResult({ url, status, finalUrl, chain, error }) {
     status >= 300 && status < 400 ? styleText('yellow', statusStr) :
     styleText('red', statusStr);
 
-  const redirect = finalUrl ? `\n     ${styleText('dim', `→ ${finalUrl}`)}` : '';
+  const redirect = urlFinal ? `\n     ${styleText('dim', `→ ${urlFinal}`)}` : '';
   const hops = chain.length > 1 ? styleText('dim', `${chain.length - 1}×→ `) : '';
 
   process.stdout.write(`${hops}${statusColored}  ${url}${redirect}\n`);
