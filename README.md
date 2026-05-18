@@ -33,9 +33,9 @@ const { files, urls, urlToFiles, results } = await check('/path/to/dir');
 {
   url,      // original target URL
   status,   // final HTTP status code
-  finalUrl, // final URL after following redirects (null if no redirects)
+  urlFinal, // final URL after following redirects (null if no redirects)
   chain,    // array of `{ url, status }` for each hop
-  error,    // error message if the request failed (`status` and `finalUrl` absent)
+  error     // error message if the request failed (`status` and `urlFinal` absent)
 }
 ```
 

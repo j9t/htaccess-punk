@@ -111,7 +111,7 @@ export async function checkUrl(url) {
   return {
     url,
     status: last.status,
-    finalUrl: last.url !== url ? last.url : null,
+    urlFinal: last.url !== url ? last.url : null,
     chain,
   };
 }
@@ -127,8 +127,8 @@ async function runPool(tasks, concurrency) {
 }
 
 export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, onReady } = {}) {
-  const resolvedDir = resolve(dir);
-  const files = await findHtaccessFiles(resolvedDir);
+  const dirResolved = resolve(dir);
+  const files = await findHtaccessFiles(dirResolved);
 
   const urlToFiles = new Map();
   await Promise.all(files.map(async file => {
@@ -151,5 +151,5 @@ export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, on
 
   await runPool(tasks, concurrency);
 
-  return { dir: resolvedDir, files, urls, urlToFiles, results };
+  return { dir: dirResolved, files, urls, urlToFiles, results };
 }

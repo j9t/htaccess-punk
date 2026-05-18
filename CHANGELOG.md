@@ -4,6 +4,12 @@ All notable changes to .htaccess Punk are documented in this file, which is (mos
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-18
+
+### Changed
+
+* Frontloaded variables for improved noun-first consistency, notably `finalUrl` as `urlFinal` but also some internal names
+
 ## [1.1.1] - 2026-03-17
 
 ### Changed
