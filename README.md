@@ -21,6 +21,8 @@ npx htaccess-punk [options] [directory]
 
 ### Programmatic Use
 
+Install .htaccess Punk in your project, e.g., via `npm i -D htaccess-punk`, then import and use what you need:
+
 ```javascript
 import { check } from 'htaccess-punk';
 
