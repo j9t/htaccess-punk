@@ -6,7 +6,7 @@
 
 ## Usage
 
-### CLI Use
+### CLI
 
 ```shell
 npx htaccess-punk [options] [directory]
