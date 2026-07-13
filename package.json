@@ -4,9 +4,18 @@
     "htaccess-punk": "bin/htaccess-punk.js"
   },
   "description": "Redirect checker for .htaccess files",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "globals": "^17.6.0"
+  },
   "exports": {
     ".": "./src/index.js"
   },
+  "files": [
+    "bin/htaccess-punk.js",
+    "src"
+  ],
   "funding": "https://github.com/j9t/htaccess-punk?sponsor=1",
   "homepage": "https://github.com/j9t/htaccess-punk",
   "keywords": [
@@ -24,11 +33,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/j9t/htaccess-punk.git"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.6.0",
-    "globals": "^17.6.0"
   },
   "scripts": {
     "lint": "eslint .",
