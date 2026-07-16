@@ -61,7 +61,7 @@ await check(dir, {
 4. **deduplicates** targets across all files
 5. **checks** each unique URL with a HEAD request (falling back to GET if the server returns 403 or 405), following redirect chains up to 10 hops, and reports the final HTTP status
 
-The `check()` function returns raw result data. The CLI (`bin/htaccess-punk.js`) collects those results and prints them grouped by `.htaccess` file, with the final status color-coded: green for 2xx, yellow for 3xx (further redirect from the final hop, e.g. a loop or exceeded redirect limit), red for 4xx/5xx. When a target redirected before settling, the final URL is shown below it.
+The `check()` function returns raw result data. The CLI (`bin/htaccess-punk.js`) collects those results and prints them grouped by `.htaccess` file, with the final status color-coded: green for 2xx, yellow for 3xx (further redirect from the final hop, e.g., a loop or exceeded redirect limit), red for 4xx/5xx. When a target redirected before settling, the final URL is shown below it.
 
 ***
 
