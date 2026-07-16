@@ -23,7 +23,7 @@ npx htaccess-punk [options] [directory]
 
 Install .htaccess Punk in your project, e.g., via `npm i -D htaccess-punk`, then import and use what you need:
 
-```javascript
+```js
 import { check } from 'htaccess-punk';
 
 const { files, urls, urlToFiles, results } = await check('/path/to/dir');
@@ -31,7 +31,7 @@ const { files, urls, urlToFiles, results } = await check('/path/to/dir');
 
 `urlToFiles` is a `Map<string, string[]>` of each target URL to the `.htaccess` files that reference it. `results` is an array of objects:
 
-```javascript
+```js
 {
   url,      // original target URL
   status,   // final HTTP status code
@@ -43,7 +43,7 @@ const { files, urls, urlToFiles, results } = await check('/path/to/dir');
 
 `check()` also accepts an options object:
 
-```javascript
+```js
 await check(dir, {
   concurrency: 5,               // parallel requests (default: 5)
   onReady({ files, urls }) {},  // called after files are found and targets extracted
