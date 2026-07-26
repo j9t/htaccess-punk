@@ -7,14 +7,19 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.8.0",
-    "globals": "^17.8.0"
+    "globals": "^17.8.0",
+    "typescript": "^7.0.2"
   },
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "files": [
     "bin/htaccess-punk.js",
-    "src"
+    "src",
+    "!src/index.test.ts"
   ],
   "funding": "https://github.com/j9t/htaccess-punk?sponsor=1",
   "homepage": "https://github.com/j9t/htaccess-punk",
@@ -38,8 +43,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "node ./bin/htaccess-punk.js",
-    "test": "node --test bin/htaccess-punk.test.js"
+    "test": "npm run test:types && node --test bin/htaccess-punk.test.js",
+    "test:types": "tsc"
   },
   "type": "module",
-  "version": "1.2.0"
+  "types": "src/index.d.ts",
+  "version": "1.3.0"
 }
