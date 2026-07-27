@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": [
+    "src/index.test.ts"
+  ],
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "esnext",
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "skipLibCheck": false,
+    "strict": true
+  }
+}
