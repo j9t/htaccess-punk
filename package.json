@@ -42,6 +42,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "prepare": "git config core.hooksPath .githooks || true",
     "start": "node ./bin/htaccess-punk.js",
     "test": "npm run test:types && node --test bin/htaccess-punk.test.js",
     "test:types": "tsc"
