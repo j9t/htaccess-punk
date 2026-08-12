@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { accessSync, constants, statSync } from 'node:fs';
 import { parseArgs, styleText } from 'node:util';
 import { resolve } from 'node:path';
 import { check } from '../src/index.js';
@@ -29,6 +30,30 @@ Options:
 
 const dir = positionals[0] || '.';
 
+// Checked up front so an unusable target fails with a clear message
+let stats;
+try {
+  stats = statSync(dir);
+} catch (err) {
+  const reason = err.code === 'ENOENT' || err.code === 'ENOTDIR'
+    ? `No such directory: ${dir}`
+    : `Cannot read ${dir}: ${err.message}`;
+  console.error(styleText('red', reason));
+  process.exit(1);
+}
+
+if (!stats.isDirectory()) {
+  console.error(styleText('red', `Not a directory: ${dir}`));
+  process.exit(1);
+}
+
+try {
+  accessSync(dir, constants.R_OK | constants.X_OK);
+} catch {
+  console.error(styleText('red', `Cannot read directory: ${dir}`));
+  process.exit(1);
+}
+
 function formatResult({ url, status, urlFinal, chain, error }) {
   if (error) {
     process.stdout.write(`${styleText('red', 'ERR')}  ${url}\n     ${styleText('dim', error)}\n`);
@@ -55,6 +80,9 @@ async function main() {
       if (!foundFiles.length || !foundUrls.length) return;
       console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''} 📂\n`); // eslint-disable-line no-irregular-whitespace
       console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
+    },
+    onWarn({ dir: dirSkipped, err }) {
+      console.warn(styleText('yellow', `Skipped ${dirSkipped}: ${err.message}`));
     },
   });
 

@@ -13,6 +13,14 @@ import type { CheckResult, CheckUrlResult } from './index.js';
 // `findHtaccessFiles` accepts a directory and resolves to file paths
 const files: string[] = await findHtaccessFiles('.');
 
+// `findHtaccessFiles` also takes an options object
+await findHtaccessFiles('.', {
+  onWarn({ dir: dirSkipped, err }) {
+    void dirSkipped.length;
+    void err.code;
+  },
+});
+
 // `extractTargets` accepts file contents and returns a set of target URLs
 const targets: Set<string> = extractTargets('Redirect 301 /old https://example.com/new');
 
@@ -30,6 +38,10 @@ const result: CheckResult = await check('.', {
   },
   onResult(each) {
     void each.url;
+  },
+  onWarn({ dir: dirSkipped, err }) {
+    void dirSkipped.length;
+    void err.message;
   },
 });
 const { dir, urls, urlToFiles, results } = result;
