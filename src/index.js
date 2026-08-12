@@ -43,8 +43,9 @@ async function walk(dir, onWarn) {
 
 // The root rejects where a subdirectory only warns; the error keeps its `code`
 export async function findHtaccessFiles(dir, { onWarn } = {}) {
-  const entries = await readdir(dir, { withFileTypes: true });
-  return collectFrom(dir, entries, onWarn);
+  const dirResolved = resolve(dir);
+  const entries = await readdir(dirResolved, { withFileTypes: true });
+  return collectFrom(dirResolved, entries, onWarn);
 }
 
 export function extractTargets(content) {

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+* **BREAKING:** Ensured `findHtaccessFiles()` resolves the given directory, so that it always returns absolute paths, matching the `files` that `check()` returns; only calls that passed a relative directory are affected
 * Ensured the CLI fails with a message and a non-zero exit when the given path doesn’t exist, isn’t a directory, or can’t be read
 * Ensured the CLI reports subdirectories it can’t read, which it used to skip silently
 

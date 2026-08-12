@@ -79,6 +79,18 @@ describe('Find .htaccess files', () => {
     }
   });
 
+  test('Returns absolute paths for a relative directory', async () => {
+    const dirCwd = process.cwd();
+    process.chdir(__dirname);
+    try {
+      const files = await findHtaccessFiles(path.basename(dirTemp));
+      assert.ok(files.length > 0);
+      assert.ok(files.every(f => path.isAbsolute(f)));
+    } finally {
+      process.chdir(dirCwd);
+    }
+  });
+
   test('`check()` rejects for a missing directory', async () => {
     await assert.rejects(
       () => check(path.join(dirTemp, 'nonexistent')),
