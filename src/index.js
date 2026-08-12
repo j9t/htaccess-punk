@@ -1,6 +1,5 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { styleText } from 'node:util';
 
 const SKIP_DIRS = new Set(['.git', 'node_modules']);
 const CONCURRENCY = 5;
@@ -11,14 +10,14 @@ const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\
 const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
 const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/\S+?)(?=\s|#|$)/i;
 
-async function collectFrom(dir, entries) {
+async function collectFrom(dir, entries, onWarn) {
   const files = [];
 
   for (const entry of entries) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await walk(fullPath));
+      files.push(...await walk(fullPath, onWarn));
     } else if (entry.name === '.htaccess') {
       files.push(fullPath);
     }
@@ -27,34 +26,25 @@ async function collectFrom(dir, entries) {
   return files;
 }
 
-// A subdirectory the scan can’t open is reported rather than silently
-// dropped—skipping it quietly would let “no redirects found” stand for a branch
-// that was never looked at. The scan continues, so one unreadable folder can’t
-// take down a whole tree. (A directory that vanishes mid-walk is a race the
-// caller can’t act on, so `ENOENT` passes without a word.)
-async function walk(dir) {
+// Report and skip unreadable subdirectory so one locked folder can’t
+// take down the scan
+async function walk(dir, onWarn) {
   let entries;
 
   try {
     entries = await readdir(dir, { withFileTypes: true });
   } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.warn(styleText('yellow', `Skipped ${dir}: ${err.message}`));
-    }
+    if (err.code !== 'ENOENT') onWarn?.({ dir, err });
     return [];
   }
 
-  return collectFrom(dir, entries);
+  return collectFrom(dir, entries, onWarn);
 }
 
-// The root is the caller’s own target, so an unreadable one is an error rather
-// than an empty result—“no .htaccess files” would otherwise stand for a
-// directory that was never opened. The underlying `fs` error propagates as is,
-// keeping its `code` (`ENOENT`, `ENOTDIR`, `EACCES`) for the caller to branch
-// on. Only the root is strict; see `walk()` for what happens below it.
-export async function findHtaccessFiles(dir) {
+// The root rejects where a subdirectory only warns; the error keeps its `code`
+export async function findHtaccessFiles(dir, { onWarn } = {}) {
   const entries = await readdir(dir, { withFileTypes: true });
-  return collectFrom(dir, entries);
+  return collectFrom(dir, entries, onWarn);
 }
 
 export function extractTargets(content) {
@@ -100,7 +90,7 @@ export async function checkUrl(url) {
         method: 'HEAD',
         redirect: 'manual',
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { 'User-Agent': 'htaccess-punk/1.0' },
+        headers: { 'User-Agent': 'htaccess-punk' },
       });
 
       // Some servers (e.g., Medium) block HEAD requests—fall back to GET
@@ -109,7 +99,7 @@ export async function checkUrl(url) {
           method: 'GET',
           redirect: 'manual',
           signal: AbortSignal.timeout(TIMEOUT_MS),
-          headers: { 'User-Agent': 'htaccess-punk/1.0' },
+          headers: { 'User-Agent': 'htaccess-punk' },
         });
       }
 
@@ -150,9 +140,9 @@ async function runPool(tasks, concurrency) {
   await Promise.all(workers);
 }
 
-export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, onReady } = {}) {
+export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, onReady, onWarn } = {}) {
   const dirResolved = resolve(dir);
-  const files = await findHtaccessFiles(dirResolved);
+  const files = await findHtaccessFiles(dirResolved, { onWarn });
 
   const urlToFiles = new Map();
   await Promise.all(files.map(async file => {

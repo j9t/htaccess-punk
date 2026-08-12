@@ -30,9 +30,7 @@ Options:
 
 const dir = positionals[0] || '.';
 
-// The directory walk treats anything it can’t read as “nothing here,” so a
-// mistyped or moved target would otherwise report a clean scan—the same output
-// as a directory that genuinely holds no redirects
+// Checked up front so an unusable target fails with a clear message
 let stats;
 try {
   stats = statSync(dir);
@@ -82,6 +80,9 @@ async function main() {
       if (!foundFiles.length || !foundUrls.length) return;
       console.log(`Found ${foundFiles.length} .htaccess file${foundFiles.length !== 1 ? 's' : ''} 📂\n`); // eslint-disable-line no-irregular-whitespace
       console.log(`Checking ${foundUrls.length} unique target${foundUrls.length !== 1 ? 's' : ''}…\n`);
+    },
+    onWarn({ dir: dirSkipped, err }) {
+      console.warn(styleText('yellow', `Skipped ${dirSkipped}: ${err.message}`));
     },
   });
 

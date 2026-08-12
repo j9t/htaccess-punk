@@ -4,16 +4,21 @@ All notable changes to .htaccess Punk are documented in this file, which is (mos
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - 2026-08-12
+## [2.0.0] - 2026-08-12
 
 ### Fixed
 
-* Ensured to fail with a message and a non-zero exit when the given path doesn’t exist, isn’t a directory, or can’t be read
+* Ensured the CLI fails with a message and a non-zero exit when the given path doesn’t exist, isn’t a directory, or can’t be read
+* Ensured the CLI reports subdirectories it can’t read, which it used to skip silently
+
+### Added
+
+* Added an `onWarn` option to `check()` and `findHtaccessFiles()`, called with `{ dir, err }` for every subdirectory that can’t be read
 
 ### Changed
 
-* Changed `check()` and `findHtaccessFiles()` to reject when the given directory doesn’t exist, isn’t a directory, or can’t be read; the underlying error keeps its `code` (`ENOENT`, `ENOTDIR`, `EACCES`)
-* Ensured to warn about a subdirectory that can’t be read
+* **BREAKING:** Changed `check()` and `findHtaccessFiles()` to reject when the given directory doesn’t exist, isn’t a directory, or can’t be read, where they previously resolved to an empty result; the underlying error keeps its `code` (`ENOENT`, `ENOTDIR`, `EACCES`)
+* Dropped the version from the `User-Agent` sent with each request
 
 ## [1.3.0] - 2026-07-27
 

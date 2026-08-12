@@ -26,7 +26,16 @@ export interface CheckReady {
   urls: string[];
 }
 
-export interface CheckOptions {
+export interface SkippedDir {
+  dir: string;
+  err: Error & { code?: string };
+}
+
+export interface FindOptions {
+  onWarn?: (skipped: SkippedDir) => void;
+}
+
+export interface CheckOptions extends FindOptions {
   concurrency?: number;
   onResult?: (result: CheckUrlResult) => void;
   onReady?: (ready: CheckReady) => void;
@@ -40,7 +49,7 @@ export interface CheckResult {
   results: CheckUrlResult[];
 }
 
-export declare function findHtaccessFiles(dir: string): Promise<string[]>;
+export declare function findHtaccessFiles(dir: string, options?: FindOptions): Promise<string[]>;
 
 export declare function extractTargets(content: string): Set<string>;
 

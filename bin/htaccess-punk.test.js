@@ -90,9 +90,13 @@ describe('Find .htaccess files', () => {
     const dirLocked = path.join(dirTemp, 'locked_nested');
     fs.mkdirSync(dirLocked, { recursive: true });
     fs.chmodSync(dirLocked, 0o000);
+    const skipped = [];
     try {
-      const files = await findHtaccessFiles(dirTemp);
+      const files = await findHtaccessFiles(dirTemp, { onWarn: warning => skipped.push(warning) });
       assert.ok(files.length > 0, 'Readable branches are still collected');
+      assert.strictEqual(skipped.length, 1);
+      assert.strictEqual(skipped[0].dir, dirLocked);
+      assert.strictEqual(skipped[0].err.code, 'EACCES');
     } finally {
       fs.chmodSync(dirLocked, 0o755);
       fs.rmSync(dirLocked, { recursive: true, force: true });
@@ -220,8 +224,7 @@ describe('CLI', () => {
     fs.rmSync(dirTemp, { recursive: true, force: true });
   });
 
-  // Without these, an unusable target walks to nothing and prints the same
-  // “No .htaccess files found.” a genuinely empty directory does, exiting “0”
+  // An unusable target has to fail loudly
   test('Fails on a directory that does not exist', () => {
     const { stderr, status } = run([path.join(dirTemp, 'nonexistent')]);
     assert.match(stderr, /No such directory/);

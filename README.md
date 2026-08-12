@@ -48,8 +48,11 @@ await check(dir, {
   concurrency: 5,               // parallel requests (default: 5)
   onReady({ files, urls }) {},  // called after files are found and targets extracted
   onResult(result) {},          // called for each result as it comes in
+  onWarn({ dir, err }) {},      // called for each subdirectory that can’t be read
 });
 ```
+
+`check()` rejects when `dir` doesn’t exist, isn’t a directory, or can’t be read; the error keeps its `fs` `code` (`ENOENT`, `ENOTDIR`, `EACCES`). Subdirectories that can’t be read are skipped and reported through `onWarn`.
 
 ## How It Works
 
