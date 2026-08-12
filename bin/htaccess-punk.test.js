@@ -176,6 +176,26 @@ describe('CLI', () => {
     fs.rmSync(dirTemp, { recursive: true, force: true });
   });
 
+  // Without these, an unusable target walks to nothing and prints the same
+  // “No .htaccess files found.” a genuinely empty directory does, exiting “0”
+  test('Fails on a directory that does not exist', () => {
+    const { stderr, status } = run([path.join(dirTemp, 'nonexistent')]);
+    assert.match(stderr, /No such directory/);
+    assert.strictEqual(status, 1);
+  });
+
+  test('Fails on a file given instead of a directory', () => {
+    const { stderr, status } = run([path.join(dirTemp, '.htaccess')]);
+    assert.match(stderr, /Not a directory/);
+    assert.strictEqual(status, 1);
+  });
+
+  test('Fails on a path whose parent is a file', () => {
+    const { stderr, status } = run([path.join(dirTemp, '.htaccess', 'nested')]);
+    assert.match(stderr, /No such directory/);
+    assert.strictEqual(status, 1);
+  });
+
   test('Shows help with `--help`', () => {
     const { stdout, status } = run(['--help']);
     assert.ok(stdout.includes('Usage:'));

@@ -4,6 +4,12 @@ All notable changes to .htaccess Punk are documented in this file, which is (mos
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-08-12
+
+### Fixed
+
+* Ensured to fail with a message and a non-zero exit when the given path doesn’t exist or isn’t a directory
+
 ## [1.3.0] - 2026-07-27
 
 ### Added

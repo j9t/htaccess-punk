@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { statSync } from 'node:fs';
 import { parseArgs, styleText } from 'node:util';
 import { resolve } from 'node:path';
 import { check } from '../src/index.js';
@@ -28,6 +29,25 @@ Options:
 }
 
 const dir = positionals[0] || '.';
+
+// The directory walk treats anything it can’t read as “nothing here,” so a
+// mistyped or moved target would otherwise report a clean scan—the same output
+// as a directory that genuinely holds no redirects
+let stats;
+try {
+  stats = statSync(dir);
+} catch (err) {
+  const reason = err.code === 'ENOENT' || err.code === 'ENOTDIR'
+    ? `No such directory: ${dir}`
+    : `Cannot read ${dir}: ${err.message}`;
+  console.error(styleText('red', reason));
+  process.exit(1);
+}
+
+if (!stats.isDirectory()) {
+  console.error(styleText('red', `Not a directory: ${dir}`));
+  process.exit(1);
+}
 
 function formatResult({ url, status, urlFinal, chain, error }) {
   if (error) {
