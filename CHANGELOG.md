@@ -4,11 +4,16 @@ All notable changes to .htaccess Punk are documented in this file, which is (mos
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - 2026-08-12
+## [1.4.0] - 2026-08-12
 
 ### Fixed
 
-* Ensured to fail with a message and a non-zero exit when the given path doesn’t exist or isn’t a directory
+* Ensured to fail with a message and a non-zero exit when the given path doesn’t exist, isn’t a directory, or can’t be read
+
+### Changed
+
+* Changed `check()` and `findHtaccessFiles()` to reject when the given directory doesn’t exist, isn’t a directory, or can’t be read; the underlying error keeps its `code` (`ENOENT`, `ENOTDIR`, `EACCES`)
+* Ensured to warn about a subdirectory that can’t be read
 
 ## [1.3.0] - 2026-07-27
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { statSync } from 'node:fs';
+import { accessSync, constants, statSync } from 'node:fs';
 import { parseArgs, styleText } from 'node:util';
 import { resolve } from 'node:path';
 import { check } from '../src/index.js';
@@ -46,6 +46,13 @@ try {
 
 if (!stats.isDirectory()) {
   console.error(styleText('red', `Not a directory: ${dir}`));
+  process.exit(1);
+}
+
+try {
+  accessSync(dir, constants.R_OK | constants.X_OK);
+} catch {
+  console.error(styleText('red', `Cannot read directory: ${dir}`));
   process.exit(1);
 }
 

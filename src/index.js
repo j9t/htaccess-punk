@@ -1,5 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { styleText } from 'node:util';
 
 const SKIP_DIRS = new Set(['.git', 'node_modules']);
 const CONCURRENCY = 5;
@@ -10,27 +11,50 @@ const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\
 const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
 const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/\S+?)(?=\s|#|$)/i;
 
-export async function findHtaccessFiles(dir) {
+async function collectFrom(dir, entries) {
   const files = [];
-  let entries;
-
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return files;
-  }
 
   for (const entry of entries) {
     if (SKIP_DIRS.has(entry.name)) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await findHtaccessFiles(fullPath));
+      files.push(...await walk(fullPath));
     } else if (entry.name === '.htaccess') {
       files.push(fullPath);
     }
   }
 
   return files;
+}
+
+// A subdirectory the scan can’t open is reported rather than silently
+// dropped—skipping it quietly would let “no redirects found” stand for a branch
+// that was never looked at. The scan continues, so one unreadable folder can’t
+// take down a whole tree. (A directory that vanishes mid-walk is a race the
+// caller can’t act on, so `ENOENT` passes without a word.)
+async function walk(dir) {
+  let entries;
+
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      console.warn(styleText('yellow', `Skipped ${dir}: ${err.message}`));
+    }
+    return [];
+  }
+
+  return collectFrom(dir, entries);
+}
+
+// The root is the caller’s own target, so an unreadable one is an error rather
+// than an empty result—“no .htaccess files” would otherwise stand for a
+// directory that was never opened. The underlying `fs` error propagates as is,
+// keeping its `code` (`ENOENT`, `ENOTDIR`, `EACCES`) for the caller to branch
+// on. Only the root is strict; see `walk()` for what happens below it.
+export async function findHtaccessFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  return collectFrom(dir, entries);
 }
 
 export function extractTargets(content) {

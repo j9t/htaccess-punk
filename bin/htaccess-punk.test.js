@@ -10,6 +10,9 @@ import { check, extractTargets, findHtaccessFiles } from '../src/index.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(__dirname, 'htaccess-punk.js');
 
+// Permission bits don’t apply to root, and `chmod` is a no-op on Windows
+const canTestPermissions = process.platform !== 'win32' && process.getuid?.() !== 0;
+
 function run(args) {
   const result = spawnSync('node', [scriptPath, ...args], { encoding: 'utf-8', timeout: 30_000 });
   return {
@@ -50,9 +53,50 @@ describe('Find .htaccess files', () => {
     assert.ok(files.every(f => !f.includes('node_modules')));
   });
 
-  test('Returns empty array for missing directory', async () => {
-    const files = await findHtaccessFiles(path.join(dirTemp, 'nonexistent'));
-    assert.deepStrictEqual(files, []);
+  test('Rejects for a missing directory', async () => {
+    await assert.rejects(
+      () => findHtaccessFiles(path.join(dirTemp, 'nonexistent')),
+      err => err.code === 'ENOENT'
+    );
+  });
+
+  test('Rejects for a root that is not a directory', async () => {
+    await assert.rejects(
+      () => findHtaccessFiles(path.join(dirTemp, '.htaccess')),
+      err => err.code === 'ENOTDIR'
+    );
+  });
+
+  test('Rejects for a root it cannot read', { skip: !canTestPermissions }, async () => {
+    const dirLocked = path.join(dirTemp, 'locked_api');
+    fs.mkdirSync(dirLocked, { recursive: true });
+    fs.chmodSync(dirLocked, 0o000);
+    try {
+      await assert.rejects(() => findHtaccessFiles(dirLocked), err => err.code === 'EACCES');
+    } finally {
+      fs.chmodSync(dirLocked, 0o755);
+      fs.rmSync(dirLocked, { recursive: true, force: true });
+    }
+  });
+
+  test('`check()` rejects for a missing directory', async () => {
+    await assert.rejects(
+      () => check(path.join(dirTemp, 'nonexistent')),
+      err => err.code === 'ENOENT'
+    );
+  });
+
+  test('Keeps scanning when a subdirectory cannot be read', { skip: !canTestPermissions }, async () => {
+    const dirLocked = path.join(dirTemp, 'locked_nested');
+    fs.mkdirSync(dirLocked, { recursive: true });
+    fs.chmodSync(dirLocked, 0o000);
+    try {
+      const files = await findHtaccessFiles(dirTemp);
+      assert.ok(files.length > 0, 'Readable branches are still collected');
+    } finally {
+      fs.chmodSync(dirLocked, 0o755);
+      fs.rmSync(dirLocked, { recursive: true, force: true });
+    }
   });
 
   test('Ensures `check()` returns `urlToFiles` mapping target URLs to their source files', async () => {
@@ -188,6 +232,33 @@ describe('CLI', () => {
     const { stderr, status } = run([path.join(dirTemp, '.htaccess')]);
     assert.match(stderr, /Not a directory/);
     assert.strictEqual(status, 1);
+  });
+
+  test('Fails on a directory it cannot read', { skip: !canTestPermissions }, () => {
+    const dirLocked = path.join(dirTemp, 'locked_root');
+    fs.mkdirSync(dirLocked, { recursive: true });
+    fs.chmodSync(dirLocked, 0o000);
+    try {
+      const { stderr, status } = run([dirLocked]);
+      assert.match(stderr, /Cannot read directory/);
+      assert.strictEqual(status, 1);
+    } finally {
+      fs.chmodSync(dirLocked, 0o755);
+      fs.rmSync(dirLocked, { recursive: true, force: true });
+    }
+  });
+
+  test('Warns instead of silently skipping an unreadable subdirectory', { skip: !canTestPermissions }, () => {
+    const dirLocked = path.join(dirTemp, 'locked_sub');
+    fs.mkdirSync(dirLocked, { recursive: true });
+    fs.chmodSync(dirLocked, 0o000);
+    try {
+      const { stderr } = run([dirTemp]);
+      assert.match(stderr, /Skipped .*locked_sub/);
+    } finally {
+      fs.chmodSync(dirLocked, 0o755);
+      fs.rmSync(dirLocked, { recursive: true, force: true });
+    }
   });
 
   test('Fails on a path whose parent is a file', () => {
