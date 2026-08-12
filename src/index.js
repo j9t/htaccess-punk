@@ -26,8 +26,8 @@ async function collectFrom(dir, entries, onWarn) {
   return files;
 }
 
-// Report and skip unreadable subdirectory so one locked folder can’t
-// take down the scan
+// Report and skip an unreadable subdirectory so one locked folder can’t take
+// down the scan; a vanished one (`ENOENT`) is a race the caller can’t act on
 async function walk(dir, onWarn) {
   let entries;
 
