@@ -273,8 +273,9 @@ describe('CLI', () => {
 
   before(() => {
     dirTemp = createDirTemp();
+    // Unreachable local target so CLI runs stay offline
     fs.writeFileSync(path.join(dirTemp, '.htaccess'), [
-      'Redirect 301 /a/ https://example.com/',
+      'Redirect 301 /a/ http://127.0.0.1:1/',
       'RedirectMatch 301 ^/b/(.*)$ https://example.com/$1',
     ].join('\n'));
   });
