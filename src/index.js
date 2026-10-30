@@ -146,7 +146,7 @@ async function runPool(tasks, concurrency) {
 
 export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, onReady, onWarn } = {}) {
   if (!Number.isInteger(concurrency) || concurrency < 1) {
-    throw new RangeError(`\`concurrency\` must be a positive integer, got ${String(concurrency)}`);
+    throw new RangeError(`\`concurrency\` must be a positive integer, got ${typeof concurrency === 'number' ? concurrency : typeof concurrency}`);
   }
 
   const dirResolved = resolve(dir);

@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createServer } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
@@ -122,21 +123,34 @@ describe('Find .htaccess files', () => {
   });
 
   test('`check()` rejects for an invalid concurrency', async () => {
-    for (const concurrency of [0, -1, 1.5, NaN, '2', true, Symbol('2')]) {
+    for (const concurrency of [0, -1, 1.5, NaN, '2', true, Symbol('2'), Object.create(null)]) {
       await assert.rejects(() => check(dirTemp, { concurrency }), { name: 'RangeError', message: /`concurrency`/ });
     }
   });
 
-  test('`check()` checks every target with a concurrency of 1', async () => {
+  test('`check()` checks every target, one at a time, with a concurrency of 1', async () => {
+    // Delayed responses so overlapping requests would be observed
+    let active = 0;
+    let activeMax = 0;
+    const server = createServer((req, res) => {
+      activeMax = Math.max(activeMax, ++active);
+      setTimeout(() => { active--; res.end(); }, 50);
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address();
+
     const dir = createDirTemp();
     fs.writeFileSync(path.join(dir, '.htaccess'), [
-      'Redirect 301 /a/ http://127.0.0.1:1/foo',
-      'Redirect 301 /b/ http://127.0.0.1:1/bar',
+      `Redirect 301 /a/ http://127.0.0.1:${port}/foo`,
+      `Redirect 301 /b/ http://127.0.0.1:${port}/bar`,
     ].join('\n'));
     try {
       const { results } = await check(dir, { concurrency: 1 });
       assert.strictEqual(results.length, 2);
+      assert.strictEqual(activeMax, 1);
     } finally {
+      server.closeAllConnections();
+      await new Promise(resolve => server.close(resolve));
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
