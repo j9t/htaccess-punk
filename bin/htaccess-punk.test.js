@@ -308,6 +308,11 @@ describe('Extract targets', () => {
     assert.deepStrictEqual([...targets], ['https://example.com/a b']);
   });
 
+  test('Ends quoted `RewriteRule` arguments at the next quote, even after a backslash', () => {
+    const targets = extractTargets('RewriteRule ^a$ "https://example.com/a\\" [R]');
+    assert.deepStrictEqual([...targets], ['https://example.com/a\\']);
+  });
+
   test('Extracts targets with escaped or literal dollar signs', () => {
     const content = [
       'RedirectMatch ^/a/ https://example.com/a\\$1',

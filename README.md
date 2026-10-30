@@ -49,11 +49,11 @@ await check(dir, {
   onReady({ files, urls }) {},          // called after files are found and targets extracted
   onResult(result) {},                  // called for each result as it comes in
   onWarn({ dir, err }) {},              // called for each subdirectory that can’t be read
-  onInvalid({ file, line, reason }) {}, // called for each directive Apache rejects
+  onInvalid({ file, line, reason }) {}, // called for each invalid redirect directive it detects
 });
 ```
 
-A directive Apache rejects (e.g., `Redirect 404 /old/ https://example.com/`) makes Apache fail the whole `.htaccess` file, so that every request to its directory gets a 500 error. .htaccess Punk still checks the file’s other targets, and reports the directive through `onInvalid`; the CLI prints these as warnings.
+A directive Apache rejects (e.g., `Redirect 404 /old/ https://example.com/`) makes Apache fail the whole `.htaccess` file, so that every request to its directory gets a 500 error. .htaccess Punk still checks the file’s other targets, and reports the directive through `onInvalid`; the CLI prints these as warnings. It detects invalid `Redirect`, `RedirectMatch`, `RedirectPermanent`, `RedirectTemp`, and `RewriteRule` lines, and a leading byte order mark (which Apache rejects except on Windows), but doesn’t validate other directives.
 
 `check()` rejects when `dir` doesn’t exist, isn’t a directory, or can’t be read; the error keeps its `fs` `code` (`ENOENT`, `ENOTDIR`, `EACCES`). It rejects with a `RangeError` when `concurrency` isn’t a positive integer. Subdirectories that can’t be read are skipped and reported through `onWarn`.
 
@@ -75,7 +75,7 @@ To extract target URLs from `.htaccess` content without checking them, use `extr
 import { extractTargets } from 'htaccess-punk';
 
 const targets = extractTargets(content, {
-  onInvalid({ line, reason }) {}, // called for each directive Apache rejects
+  onInvalid({ line, reason }) {}, // called for each invalid redirect directive it detects
 });
 ```
 

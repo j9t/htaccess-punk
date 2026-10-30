@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Added an `onInvalid` option to `check()` and `extractTargets()`, called with `{ file, line, reason }` (`{ line, reason }` for `extractTargets()`) for every directive Apache rejects, which makes Apache fail the whole file (including a leading byte order mark, which Apache rejects except on Windows); the CLI prints these as warnings
+* Added an `onInvalid` option to `check()` and `extractTargets()`, called with `{ file, line, reason }` (`{ line, reason }` for `extractTargets()`) for each invalid `Redirect`, `RedirectMatch`, `RedirectPermanent`, `RedirectTemp`, or `RewriteRule` line it detects, which makes Apache fail the whole file (as does a leading byte order mark, which Apache rejects except on Windows); the CLI prints these as warnings
 
 ### Changed
 
