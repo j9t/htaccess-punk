@@ -116,7 +116,7 @@ describe('Find .htaccess files', () => {
   });
 
   test('`check()` rejects for an invalid concurrency', async () => {
-    for (const concurrency of [0, -1, 1.5, NaN]) {
+    for (const concurrency of [0, -1, 1.5, NaN, '2', true, Symbol('2')]) {
       await assert.rejects(() => check(dirTemp, { concurrency }), RangeError);
     }
   });
@@ -177,8 +177,16 @@ describe('Extract targets', () => {
   });
 
   test('Extracts RedirectMatch targets with a status keyword', () => {
-    const targets = extractTargets('RedirectMatch permanent ^/old/(.*)$ https://example.com/new/');
-    assert.deepStrictEqual([...targets], ['https://example.com/new/']);
+    const content = [
+      'RedirectMatch permanent ^/a/(.*)$ https://example.com/a/',
+      'RedirectMatch temp ^/b/(.*)$ https://example.com/b/',
+      'RedirectMatch seeother ^/c/(.*)$ https://example.com/c/',
+    ].join('\n');
+    assert.deepStrictEqual([...extractTargets(content)], [
+      'https://example.com/a/',
+      'https://example.com/b/',
+      'https://example.com/c/',
+    ]);
   });
 
   test('Extracts RedirectMatch targets without backreferences', () => {
