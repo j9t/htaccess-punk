@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Removed redundant ESLint configuration and an unreachable fallback in the CLI
+* Discarded response bodies of `GET` fallback requests, which kept their connections busy
 
 ## [2.0.0] - 2026-08-12
 

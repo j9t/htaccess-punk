@@ -157,6 +157,31 @@ describe('Find .htaccess files', () => {
     }
   });
 
+  test('`check()` falls back to GET when HEAD is not allowed', async () => {
+    const methods = [];
+    const server = createServer((req, res) => {
+      methods.push(req.method);
+      res.writeHead(req.method === 'HEAD' ? 405 : 200);
+      res.end(req.method === 'HEAD' ? undefined : 'body');
+    });
+    const dir = createDirTemp();
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, '127.0.0.1', resolve);
+      });
+      const { port } = server.address();
+      fs.writeFileSync(path.join(dir, '.htaccess'), `Redirect 301 /a/ http://127.0.0.1:${port}/a`);
+      const { results } = await check(dir);
+      assert.deepStrictEqual(methods, ['HEAD', 'GET']);
+      assert.strictEqual(results[0].status, 200);
+    } finally {
+      server.closeAllConnections();
+      await new Promise(resolve => server.close(resolve));
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test('`check()` reports lines Apache rejects with their file', async () => {
     const dir = createDirTemp();
     const invalid = [];
@@ -428,6 +453,8 @@ describe('Extract targets', () => {
       'RewriteRule ^h$ https://example.com/h/ [R=301, L]',
       'Redirect 301 /i/ \\',
       '  https://example.com/i/ extra',
+      'Redirect "" https://example.com/j/',
+      'RedirectMatch ^/k/ ""',
     ].join('\n');
     extractTargets(content, { onInvalid: entry => invalid.push(entry) });
     assert.deepStrictEqual(invalid, [
@@ -441,12 +468,14 @@ describe('Extract targets', () => {
       { line: 8, reason: 'RewriteRule is missing a substitution (or the pattern’s quote isn’t closed)' },
       { line: 9, reason: 'RewriteRule flags need to be in brackets, without unquoted spaces' },
       { line: 10, reason: 'Redirect takes one, two, or three arguments' },
+      { line: 12, reason: 'Redirect takes one, two, or three arguments' },
+      { line: 13, reason: 'RedirectMatch takes two or three arguments' },
     ]);
   });
 
   test('Extracts targets after a byte order mark, and reports it', () => {
     const invalid = [];
-    const targets = extractTargets('﻿Redirect 301 /a/ https://example.com/a/', { onInvalid: entry => invalid.push(entry) });
+    const targets = extractTargets('\uFEFFRedirect 301 /a/ https://example.com/a/', { onInvalid: entry => invalid.push(entry) });
     assert.deepStrictEqual([...targets], ['https://example.com/a/']);
     assert.deepStrictEqual(invalid, [{ line: 1, reason: 'File starts with a byte order mark, which Apache rejects except on Windows' }]);
   });

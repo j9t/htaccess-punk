@@ -260,7 +260,7 @@ export function extractTargets(content, { onInvalid } = {}) {
   const targets = new Set();
 
   // Only Apache on Windows skips a BOM; elsewhere, it breaks the first directive
-  const hasBom = content.startsWith('﻿');
+  const hasBom = content.startsWith('\uFEFF');
   if (hasBom) onInvalid?.({ line: 1, reason: 'File starts with a byte order mark, which Apache rejects except on Windows' });
 
   for (const { text, line } of readLines(hasBom ? content.slice(1) : content)) {
@@ -306,11 +306,14 @@ export async function checkUrl(url) {
         });
       }
 
+      // Only headers are needed; an unread body keeps its connection busy
+      await res.body?.cancel();
+
       const status = res.status;
       const location = res.headers.get('location');
       chain.push({ url: current, status });
 
-      if (status >= 300 && status < 400 && location) {
+      if (isRedirectStatus(status) && location) {
         try {
           current = new URL(location, current).href;
         } catch {
