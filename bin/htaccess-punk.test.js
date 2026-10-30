@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,10 @@ const scriptPath = path.join(__dirname, 'htaccess-punk.js');
 // Permission bits don’t apply to root, and `chmod` is a no-op on Windows
 const canTestPermissions = process.platform !== 'win32' && process.getuid?.() !== 0;
 
+function createDirTemp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'htaccess-punk-'));
+}
+
 function run(args) {
   const result = spawnSync('node', [scriptPath, ...args], { encoding: 'utf-8', timeout: 30_000 });
   return {
@@ -23,9 +28,10 @@ function run(args) {
 }
 
 describe('Find .htaccess files', () => {
-  const dirTemp = path.join(__dirname, 'temp_test_find');
+  let dirTemp;
 
   before(() => {
+    dirTemp = createDirTemp();
     fs.mkdirSync(path.join(dirTemp, 'sub'), { recursive: true });
     fs.mkdirSync(path.join(dirTemp, 'node_modules'), { recursive: true });
     fs.writeFileSync(path.join(dirTemp, '.htaccess'), 'Redirect 301 /old/ https://example.com/');
@@ -81,7 +87,7 @@ describe('Find .htaccess files', () => {
 
   test('Returns absolute paths for a relative directory', async () => {
     const dirCwd = process.cwd();
-    process.chdir(__dirname);
+    process.chdir(path.dirname(dirTemp));
     try {
       const files = await findHtaccessFiles(path.basename(dirTemp));
       assert.ok(files.length > 0);
@@ -122,8 +128,7 @@ describe('Find .htaccess files', () => {
   });
 
   test('Ensures `check()` returns `urlToFiles` mapping target URLs to their source files', async () => {
-    const dir = path.join(__dirname, 'temp_test_check_api');
-    fs.mkdirSync(dir, { recursive: true });
+    const dir = createDirTemp();
     fs.writeFileSync(path.join(dir, '.htaccess'), [
       'Redirect 301 /a/ http://127.0.0.1:1/foo',
       'Redirect 301 /b/ http://127.0.0.1:1/foo',
@@ -264,10 +269,10 @@ describe('Extract targets', () => {
 });
 
 describe('CLI', () => {
-  const dirTemp = path.join(__dirname, 'temp_test_cli');
+  let dirTemp;
 
   before(() => {
-    fs.mkdirSync(dirTemp, { recursive: true });
+    dirTemp = createDirTemp();
     fs.writeFileSync(path.join(dirTemp, '.htaccess'), [
       'Redirect 301 /a/ https://example.com/',
       'RedirectMatch 301 ^/b/(.*)$ https://example.com/$1',
@@ -364,16 +369,17 @@ describe('CLI', () => {
   });
 
   describe('`--errors` filtering', () => {
-    const dirFilter = path.join(__dirname, 'temp_test_errors');
+    let dirFilter;
     let serverProcess;
     let port;
 
     before(async () => {
-      fs.mkdirSync(dirFilter, { recursive: true });
+      dirFilter = createDirTemp();
 
       // The server runs in a separate process so `spawnSync` (used by `run()`) does
-      // not block its event loop; routes: 200, 301 → 200, 404, /fail (socket reset)
-      const serverScript = path.join(dirFilter, '_server.js');
+      // not block its event loop; routes: 200, 301 → 200, 404, /fail (socket reset);
+      // `.mjs` because the temp directory has no `package.json` declaring ESM
+      const serverScript = path.join(dirFilter, '_server.mjs');
       fs.writeFileSync(serverScript, [
         "import { createServer } from 'node:http';",
         'const server = createServer((req, res) => {',
