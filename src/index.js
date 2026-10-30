@@ -6,9 +6,11 @@ const CONCURRENCY = 5;
 const TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 10;
 
-const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
-const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:\d{3}\s+)?\S+\s+(https?:\/\/\S+)/i;
+const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:(?:\d{3}|permanent|temp|seeother)\s+)?\S+\s+(https?:\/\/\S+)/i;
+const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:(?:\d{3}|permanent|temp|seeother)\s+)?\S+\s+(https?:\/\/\S+)/i;
 const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/\S+?)(?=\s|#|$)/i;
+// What Apache expands in a substitution: `%N` backreferences and `%{…}` variables
+const REWRITE_COND_REF_RE = /%(?:\d|\{)/;
 
 async function collectFrom(dir, entries, onWarn) {
   const files = [];
@@ -55,7 +57,7 @@ export function extractTargets(content) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
 
-    // Redirect [status] <source> <target>
+    // Redirect [status|keyword] <source> <target>
     // RedirectPermanent <source> <target>
     // RedirectTemp <source> <target>
     const redirect = trimmed.match(REDIRECT_RE);
@@ -64,7 +66,7 @@ export function extractTargets(content) {
       continue;
     }
 
-    // RedirectMatch [status] <pattern> <target>
+    // RedirectMatch [status|keyword] <pattern> <target>
     const redirectMatch = trimmed.match(REDIRECT_MATCH_RE);
     if (redirectMatch && !redirectMatch[1].includes('$')) {
       targets.add(redirectMatch[1]);
@@ -73,7 +75,7 @@ export function extractTargets(content) {
 
     // RewriteRule <pattern> <target> [flags]
     const rewrite = trimmed.match(REWRITE_RULE_RE);
-    if (rewrite && !rewrite[1].includes('$') && !rewrite[1].includes('%')) {
+    if (rewrite && !rewrite[1].includes('$') && !REWRITE_COND_REF_RE.test(rewrite[1])) {
       targets.add(rewrite[1]);
     }
   }
@@ -142,6 +144,10 @@ async function runPool(tasks, concurrency) {
 }
 
 export async function check(dir = '.', { concurrency = CONCURRENCY, onResult, onReady, onWarn } = {}) {
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new RangeError(`\`concurrency\` must be a positive integer, got ${concurrency}`);
+  }
+
   const dirResolved = resolve(dir);
   const files = await findHtaccessFiles(dirResolved, { onWarn });
 

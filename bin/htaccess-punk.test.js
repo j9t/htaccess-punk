@@ -115,6 +115,12 @@ describe('Find .htaccess files', () => {
     }
   });
 
+  test('`check()` rejects for an invalid concurrency', async () => {
+    for (const concurrency of [0, -1, 1.5, NaN]) {
+      await assert.rejects(() => check(dirTemp, { concurrency }), RangeError);
+    }
+  });
+
   test('Ensures `check()` returns `urlToFiles` mapping target URLs to their source files', async () => {
     const dir = path.join(__dirname, 'temp_test_check_api');
     fs.mkdirSync(dir, { recursive: true });
@@ -157,6 +163,24 @@ describe('Extract targets', () => {
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
+  test('Extracts Redirect targets with a status keyword', () => {
+    const content = [
+      'Redirect permanent /a/ https://example.com/a/',
+      'Redirect temp /b/ https://example.com/b/',
+      'Redirect seeother /c/ https://example.com/c/',
+    ].join('\n');
+    assert.deepStrictEqual([...extractTargets(content)], [
+      'https://example.com/a/',
+      'https://example.com/b/',
+      'https://example.com/c/',
+    ]);
+  });
+
+  test('Extracts RedirectMatch targets with a status keyword', () => {
+    const targets = extractTargets('RedirectMatch permanent ^/old/(.*)$ https://example.com/new/');
+    assert.deepStrictEqual([...targets], ['https://example.com/new/']);
+  });
+
   test('Extracts RedirectMatch targets without backreferences', () => {
     const targets = extractTargets('RedirectMatch 301 ^/old/(.*)$ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
@@ -179,6 +203,16 @@ describe('Extract targets', () => {
 
   test('Skips RewriteRule targets with rewrite map references', () => {
     const targets = extractTargets('RewriteRule ^/old/(.*)$ https://example.com/%{HTTP_HOST} [L]');
+    assert.deepStrictEqual([...targets], []);
+  });
+
+  test('Extracts RewriteRule targets with percent-encoding Apache leaves literal', () => {
+    const targets = extractTargets('RewriteRule ^old$ https://example.com/caf%C3%A9 [L]');
+    assert.deepStrictEqual([...targets], ['https://example.com/caf%C3%A9']);
+  });
+
+  test('Skips RewriteRule targets with digit-led percent sequences Apache expands', () => {
+    const targets = extractTargets('RewriteRule ^old$ https://example.com/a%20b [L]');
     assert.deepStrictEqual([...targets], []);
   });
 
@@ -297,9 +331,12 @@ describe('CLI', () => {
   test('Reports no .htaccess files found for empty directory', () => {
     const dirEmpty = path.join(dirTemp, 'empty');
     fs.mkdirSync(dirEmpty, { recursive: true });
-    const { stdout } = run([dirEmpty]);
-    assert.ok(stdout.includes('No .htaccess files found'));
-    fs.rmSync(dirEmpty, { recursive: true, force: true });
+    try {
+      const { stdout } = run([dirEmpty]);
+      assert.ok(stdout.includes('No .htaccess files found'));
+    } finally {
+      fs.rmSync(dirEmpty, { recursive: true, force: true });
+    }
   });
 
   test('Finds and scans .htaccess files', () => {
