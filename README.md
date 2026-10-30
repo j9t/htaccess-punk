@@ -72,7 +72,7 @@ It resolves to an array of absolute paths, and takes the same `onWarn` option an
 
 1. **finds** all `.htaccess` files in the given directory, recursively (skipping `node_modules` and `.git`)
 2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
-3. **skips** targets that contain regex backreferences or server variables (`$1`, `%1`, `%{HTTP_HOST}`, etc.)—these depend on the matched request path and can’t be checked without it
+3. **skips** targets that contain regex backreferences or server variables (`$1`, `%1`, `%{HTTP_HOST}`, etc.)—these depend on the matched request path and can’t be checked without it; as Apache reads `%` followed by a digit as a backreference, this includes `RewriteRule` targets with percent-encoding like `%20` or `%2F`
 4. **deduplicates** targets across all files
 5. **checks** each unique URL with a HEAD request (falling back to GET if the server returns 403 or 405), following redirect chains up to 10 hops, and reports the final HTTP status
 

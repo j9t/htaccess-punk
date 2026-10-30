@@ -6,7 +6,7 @@ const CONCURRENCY = 5;
 const TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 10;
 
-const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:(?:\d{3}|permanent|temp|seeother)\s+)?\S+\s+(https?:\/\/\S+)/i;
+const REDIRECT_RE = /^Redirect(?:Permanent|Temp)?\s+(?:(?:\d{3}|permanent|temp|seeother)\s+)?(?:\S+\s+)?(https?:\/\/\S+)/i;
 const REDIRECT_MATCH_RE = /^RedirectMatch\s+(?:(?:\d{3}|permanent|temp|seeother)\s+)?\S+\s+(https?:\/\/\S+)/i;
 const REWRITE_RULE_RE = /^RewriteRule\s+\S+\s+(https?:\/\/\S+?)(?=\s|#|$)/i;
 // What Apache expands in a substitution: `%N` backreferences and `%{…}` variables
@@ -57,7 +57,7 @@ export function extractTargets(content) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
 
-    // Redirect [status|keyword] <source> <target>
+    // Redirect [status|keyword] [source] <target>
     // RedirectPermanent <source> <target>
     // RedirectTemp <source> <target>
     const redirect = trimmed.match(REDIRECT_RE);

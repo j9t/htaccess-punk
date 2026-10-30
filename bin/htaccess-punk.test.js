@@ -123,7 +123,21 @@ describe('Find .htaccess files', () => {
 
   test('`check()` rejects for an invalid concurrency', async () => {
     for (const concurrency of [0, -1, 1.5, NaN, '2', true, Symbol('2')]) {
-      await assert.rejects(() => check(dirTemp, { concurrency }), RangeError);
+      await assert.rejects(() => check(dirTemp, { concurrency }), { name: 'RangeError', message: /`concurrency`/ });
+    }
+  });
+
+  test('`check()` checks every target with a concurrency of 1', async () => {
+    const dir = createDirTemp();
+    fs.writeFileSync(path.join(dir, '.htaccess'), [
+      'Redirect 301 /a/ http://127.0.0.1:1/foo',
+      'Redirect 301 /b/ http://127.0.0.1:1/bar',
+    ].join('\n'));
+    try {
+      const { results } = await check(dir, { concurrency: 1 });
+      assert.strictEqual(results.length, 2);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
@@ -148,27 +162,40 @@ describe('Find .htaccess files', () => {
 });
 
 describe('Extract targets', () => {
-  test('Extracts Redirect targets', () => {
+  test('Extracts `Redirect` targets', () => {
     const targets = extractTargets('Redirect 301 /old/ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Extracts RedirectPermanent targets', () => {
+  test('Extracts `RedirectPermanent` targets', () => {
     const targets = extractTargets('RedirectPermanent /old/ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Extracts RedirectTemp targets', () => {
+  test('Extracts `RedirectTemp` targets', () => {
     const targets = extractTargets('RedirectTemp /old/ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Extracts Redirect without explicit status code', () => {
+  test('Extracts `Redirect` without explicit status code', () => {
     const targets = extractTargets('Redirect /old/ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Extracts Redirect targets with a status keyword', () => {
+  test('Extracts `Redirect` targets without a URL-path', () => {
+    const content = [
+      'Redirect https://example.com/a/',
+      'Redirect 301 https://example.com/b/',
+      'Redirect permanent https://example.com/c/',
+    ].join('\n');
+    assert.deepStrictEqual([...extractTargets(content)], [
+      'https://example.com/a/',
+      'https://example.com/b/',
+      'https://example.com/c/',
+    ]);
+  });
+
+  test('Extracts `Redirect` targets with a status keyword', () => {
     const content = [
       'Redirect permanent /a/ https://example.com/a/',
       'Redirect temp /b/ https://example.com/b/',
@@ -181,7 +208,7 @@ describe('Extract targets', () => {
     ]);
   });
 
-  test('Extracts RedirectMatch targets with a status keyword', () => {
+  test('Extracts `RedirectMatch` targets with a status keyword', () => {
     const content = [
       'RedirectMatch permanent ^/a/(.*)$ https://example.com/a/',
       'RedirectMatch temp ^/b/(.*)$ https://example.com/b/',
@@ -194,42 +221,42 @@ describe('Extract targets', () => {
     ]);
   });
 
-  test('Extracts RedirectMatch targets without backreferences', () => {
+  test('Extracts `RedirectMatch` targets without backreferences', () => {
     const targets = extractTargets('RedirectMatch 301 ^/old/(.*)$ https://example.com/new/');
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Skips RedirectMatch targets with backreferences', () => {
+  test('Skips `RedirectMatch` targets with backreferences', () => {
     const targets = extractTargets('RedirectMatch 301 ^/old/(.*)$ https://example.com/$1');
     assert.deepStrictEqual([...targets], []);
   });
 
-  test('Extracts RewriteRule absolute targets', () => {
+  test('Extracts `RewriteRule` absolute targets', () => {
     const targets = extractTargets('RewriteRule ^(.*)$ https://example.com/ [L]');
     assert.deepStrictEqual([...targets], ['https://example.com/']);
   });
 
-  test('Skips RewriteRule targets with backreferences', () => {
+  test('Skips `RewriteRule` targets with backreferences', () => {
     const targets = extractTargets('RewriteRule ^/old/(.*)$ https://example.com/$1 [L]');
     assert.deepStrictEqual([...targets], []);
   });
 
-  test('Skips RewriteRule targets with rewrite map references', () => {
+  test('Skips `RewriteRule` targets with rewrite map references', () => {
     const targets = extractTargets('RewriteRule ^/old/(.*)$ https://example.com/%{HTTP_HOST} [L]');
     assert.deepStrictEqual([...targets], []);
   });
 
-  test('Extracts RewriteRule targets with percent-encoding Apache leaves literal', () => {
+  test('Extracts `RewriteRule` targets with percent-encoding Apache leaves literal', () => {
     const targets = extractTargets('RewriteRule ^old$ https://example.com/caf%C3%A9 [L]');
     assert.deepStrictEqual([...targets], ['https://example.com/caf%C3%A9']);
   });
 
-  test('Skips RewriteRule targets with digit-led percent sequences Apache expands', () => {
+  test('Skips `RewriteRule` targets with digit-led percent sequences Apache expands', () => {
     const targets = extractTargets('RewriteRule ^old$ https://example.com/a%20b [L]');
     assert.deepStrictEqual([...targets], []);
   });
 
-  test('Extracts RewriteRule targets with IPv6 hosts', () => {
+  test('Extracts `RewriteRule` targets with IPv6 hosts', () => {
     const targets = extractTargets('RewriteRule ^(.*)$ https://[2001:db8::1]/foo [L]');
     assert.deepStrictEqual([...targets], ['https://[2001:db8::1]/foo']);
   });
