@@ -24,6 +24,14 @@ await findHtaccessFiles('.', {
 // `extractTargets` accepts file contents and returns a set of target URLs
 const targets: Set<string> = extractTargets('Redirect 301 /old https://example.com/new');
 
+// `extractTargets` also takes an options object
+extractTargets('Redirect 404 /old https://example.com/new', {
+  onInvalid({ line, reason }) {
+    void line.toFixed();
+    void reason.length;
+  },
+});
+
 // `checkUrl` accepts a URL and resolves to either a status or an error result
 const urlResult: CheckUrlResult = await checkUrl('https://example.com/');
 const chain = urlResult.chain;
@@ -42,6 +50,11 @@ const result: CheckResult = await check('.', {
   onWarn({ dir: dirSkipped, err }) {
     void dirSkipped.length;
     void err.message;
+  },
+  onInvalid({ file, line, reason }) {
+    void file.length;
+    void line.toFixed();
+    void reason.length;
   },
 });
 const { dir, urls, urlToFiles, results } = result;

@@ -84,6 +84,9 @@ async function main() {
     onWarn({ dir: dirSkipped, err }) {
       console.warn(styleText('yellow', `Skipped ${dirSkipped}: ${err.message}`));
     },
+    onInvalid({ file, line, reason }) {
+      console.warn(styleText('yellow', `Invalid directive at ${file}:${line}: ${reason} (Apache rejects the whole file)`));
+    },
   });
 
   if (!files.length) {

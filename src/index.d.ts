@@ -31,6 +31,19 @@ export interface SkippedDir {
   err: Error & { code?: string };
 }
 
+export interface InvalidLine {
+  line: number;
+  reason: string;
+}
+
+export interface InvalidDirective extends InvalidLine {
+  file: string;
+}
+
+export interface ExtractOptions {
+  onInvalid?: (invalid: InvalidLine) => void;
+}
+
 export interface FindOptions {
   onWarn?: (skipped: SkippedDir) => void;
 }
@@ -39,6 +52,7 @@ export interface CheckOptions extends FindOptions {
   concurrency?: number;
   onResult?: (result: CheckUrlResult) => void;
   onReady?: (ready: CheckReady) => void;
+  onInvalid?: (invalid: InvalidDirective) => void;
 }
 
 export interface CheckResult {
@@ -51,7 +65,7 @@ export interface CheckResult {
 
 export declare function findHtaccessFiles(dir: string, options?: FindOptions): Promise<string[]>;
 
-export declare function extractTargets(content: string): Set<string>;
+export declare function extractTargets(content: string, options?: ExtractOptions): Set<string>;
 
 export declare function checkUrl(url: string): Promise<CheckUrlResult>;
 
