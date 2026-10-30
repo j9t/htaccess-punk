@@ -182,17 +182,24 @@ describe('Extract targets', () => {
     assert.deepStrictEqual([...targets], ['https://example.com/new/']);
   });
 
-  test('Extracts `Redirect` targets without a URL-path', () => {
+  test('Extracts targets from quoted arguments', () => {
     const content = [
-      'Redirect https://example.com/a/',
-      'Redirect 301 https://example.com/b/',
-      'Redirect permanent https://example.com/c/',
+      'Redirect permanent "/a/" "https://example.com/a/"',
+      'Redirect "/b c/" https://example.com/b/',
+      'RedirectMatch 301 "^/c/(.*)$" "https://example.com/c/"',
+      'RewriteRule "^/d e$" "https://example.com/d/" [R=301,L]',
     ].join('\n');
     assert.deepStrictEqual([...extractTargets(content)], [
       'https://example.com/a/',
       'https://example.com/b/',
       'https://example.com/c/',
+      'https://example.com/d/',
     ]);
+  });
+
+  test('Skips quoted `RedirectMatch` targets with backreferences', () => {
+    const targets = extractTargets('RedirectMatch "(.*)\\.gif$" "https://example.com$1.jpg"');
+    assert.deepStrictEqual([...targets], []);
   });
 
   test('Extracts `Redirect` targets with a status keyword', () => {

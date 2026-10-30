@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Ensured `Redirect` and `RedirectMatch` targets are extracted when the status is given as a keyword (`permanent`, `temp`, `seeother`)
-* Ensured `Redirect` targets are extracted when the URL-path is omitted (as within `<If>`)
+* Ensured targets in quoted arguments (as in Apache’s documentation, e.g., `Redirect "/one" "https://example.com/two"`) are extracted
 * Ensured `RewriteRule` targets with percent-encoding that Apache leaves literal (e.g., `%C3%A9`) are checked rather than skipped like backreferences
 * Ensured `check()` rejects with a `RangeError` for a `concurrency` that isn’t a positive integer, where it previously resolved without checking anything
 
