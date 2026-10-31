@@ -98,7 +98,7 @@ describe('Find .htaccess files', () => {
     }
   });
 
-  test('`check()` rejects for a missing directory', async () => {
+  test('Rejects for a missing directory in `check()`', async () => {
     await assert.rejects(
       () => check(path.join(dirTemp, 'nonexistent')),
       err => err.code === 'ENOENT'
@@ -122,13 +122,13 @@ describe('Find .htaccess files', () => {
     }
   });
 
-  test('`check()` rejects for an invalid concurrency', async () => {
+  test('Rejects for an invalid concurrency in `check()`', async () => {
     for (const concurrency of [0, -1, 1.5, NaN, '2', true, Symbol('2'), Object.create(null)]) {
       await assert.rejects(() => check(dirTemp, { concurrency }), { name: 'RangeError', message: /`concurrency`/ });
     }
   });
 
-  test('`check()` checks every target, one at a time, with a concurrency of 1', async () => {
+  test('Checks every target one at a time in `check()` with a concurrency of 1', async () => {
     // Delayed responses so overlapping requests would be observed
     let active = 0;
     let activeMax = 0;
@@ -157,7 +157,7 @@ describe('Find .htaccess files', () => {
     }
   });
 
-  test('`check()` falls back to GET when HEAD is not allowed', async () => {
+  test('Falls back to GET in `check()` when HEAD is not allowed', async () => {
     const methods = [];
     const server = createServer((req, res) => {
       methods.push(req.method);
@@ -182,7 +182,7 @@ describe('Find .htaccess files', () => {
     }
   });
 
-  test('`check()` reports lines Apache rejects with their file', async () => {
+  test('Reports lines Apache rejects with their file in `check()`', async () => {
     const dir = createDirTemp();
     const invalid = [];
     try {
