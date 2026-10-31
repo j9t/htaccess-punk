@@ -84,6 +84,9 @@ async function main() {
     onWarn({ dir: dirSkipped, err }) {
       console.warn(styleText('yellow', `Skipped ${dirSkipped}: ${err.message}`));
     },
+    onInvalid({ file, line, reason }) {
+      console.warn(styleText('yellow', `Invalid directive at ${file}:${line}: ${reason} (Apache rejects the whole file)`));
+    },
   });
 
   if (!files.length) {
@@ -97,8 +100,8 @@ async function main() {
   }
 
   const fileToResults = new Map();
-  for (const result of [...results].sort((a, b) => (a.url < b.url ? -1 : 1))) {
-    for (const file of urlToFiles.get(result.url) ?? []) {
+  for (const result of results.sort((a, b) => (a.url < b.url ? -1 : 1))) {
+    for (const file of urlToFiles.get(result.url)) {
       if (!fileToResults.has(file)) fileToResults.set(file, []);
       fileToResults.get(file).push(result);
     }

@@ -45,14 +45,17 @@ const { files, urls, urlToFiles, results } = await check('/path/to/dir');
 
 ```js
 await check(dir, {
-  concurrency: 5,              // parallel requests (default: 5)
-  onReady({ files, urls }) {}, // called after files are found and targets extracted
-  onResult(result) {},         // called for each result as it comes in
-  onWarn({ dir, err }) {},     // called for each subdirectory that can’t be read
+  concurrency: 5,                       // parallel requests (default: 5)
+  onReady({ files, urls }) {},          // called after files are found and targets extracted
+  onResult(result) {},                  // called for each result as it comes in
+  onWarn({ dir, err }) {},              // called for each subdirectory that can’t be read
+  onInvalid({ file, line, reason }) {}, // called for each invalid redirect directive it detects
 });
 ```
 
-`check()` rejects when `dir` doesn’t exist, isn’t a directory, or can’t be read; the error keeps its `fs` `code` (`ENOENT`, `ENOTDIR`, `EACCES`). Subdirectories that can’t be read are skipped and reported through `onWarn`.
+A directive Apache rejects (e.g., `Redirect 404 /old/ https://example.com/`) makes Apache fail the whole `.htaccess` file, so that every request to its directory gets a 500 error. .htaccess Punk still checks the file’s other targets, and reports the directive through `onInvalid`; the CLI prints these as warnings. It detects invalid `Redirect`, `RedirectMatch`, `RedirectPermanent`, `RedirectTemp`, and `RewriteRule` lines, and a leading byte order mark (which Apache rejects except on Windows), but doesn’t validate other directives.
+
+`check()` rejects when `dir` doesn’t exist, isn’t a directory, or can’t be read; the error keeps its `fs` `code` (`ENOENT`, `ENOTDIR`, `EACCES`). It rejects with a `RangeError` when `concurrency` isn’t a positive integer. Subdirectories that can’t be read are skipped and reported through `onWarn`.
 
 To collect `.htaccess` files without checking anything, use `findHtaccessFiles()`:
 
@@ -66,13 +69,35 @@ const files = await findHtaccessFiles('/path/to/dir', {
 
 It resolves to an array of absolute paths, and takes the same `onWarn` option and rejects on the same conditions as `check()`.
 
+To extract target URLs from `.htaccess` content without checking them, use `extractTargets()`:
+
+```js
+import { extractTargets } from 'htaccess-punk';
+
+const targets = extractTargets(content, {
+  onInvalid({ line, reason }) {}, // called for each invalid redirect directive it detects
+});
+```
+
+It returns a `Set` of the absolute target URLs that can be checked.
+
+To check a single URL, use `checkUrl()`:
+
+```js
+import { checkUrl } from 'htaccess-punk';
+
+const result = await checkUrl('https://example.com/');
+```
+
+It resolves to a result object as described for `check()`, and doesn’t reject; failed requests come back with `error`.
+
 ## How It Works
 
 .htaccess Punk:
 
 1. **finds** all `.htaccess` files in the given directory, recursively (skipping `node_modules` and `.git`)
-2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives to extract absolute target URLs
-3. **skips** targets that contain regex backreferences (`$1`, `%1`, etc.)—these depend on the matched request path and can’t be checked without it
+2. **parses** `Redirect`, `RedirectPermanent`, `RedirectTemp`, `RedirectMatch`, and `RewriteRule` directives the way Apache does (including quoting, escaping, and line continuation) to extract absolute target URLs
+3. **skips** targets that contain regex backreferences or server variables (`$1`, `%1`, `%{HTTP_HOST}`, etc.)—these depend on the matched request path and can’t be checked without it; as Apache reads `%` followed by a digit as a backreference, this includes `RewriteRule` targets with percent-encoding like `%20` or `%2F`; it also skips lines with config variables (`${…}`), which depend on the server configuration, and directives that Apache rejects or that don’t redirect (e.g., `Redirect 404 …` or `RewriteRule … [F]`)
 4. **deduplicates** targets across all files
 5. **checks** each unique URL with a HEAD request (falling back to GET if the server returns 403 or 405), following redirect chains up to 10 hops, and reports the final HTTP status
 
