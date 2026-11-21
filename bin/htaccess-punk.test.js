@@ -11,6 +11,7 @@ import { check, extractTargets, findHtaccessFiles } from '../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(__dirname, 'htaccess-punk.js');
+const { homepage, version } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
 
 // Permission bits don’t apply to root, and `chmod` is a no-op on Windows
 const canTestPermissions = process.platform !== 'win32' && process.getuid?.() !== 0;
@@ -159,8 +160,10 @@ describe('Find .htaccess files', () => {
 
   test('Falls back to GET in `check()` when HEAD is not allowed', async () => {
     const methods = [];
+    const userAgents = [];
     const server = createServer((req, res) => {
       methods.push(req.method);
+      userAgents.push(req.headers['user-agent']);
       res.writeHead(req.method === 'HEAD' ? 405 : 200);
       res.end(req.method === 'HEAD' ? undefined : 'body');
     });
@@ -175,6 +178,7 @@ describe('Find .htaccess files', () => {
       const { results } = await check(dir);
       assert.deepStrictEqual(methods, ['HEAD', 'GET']);
       assert.strictEqual(results[0].status, 200);
+      assert.deepStrictEqual(userAgents, Array(2).fill(`htaccess-punk/${version} (+${homepage})`));
     } finally {
       server.closeAllConnections();
       await new Promise(resolve => server.close(resolve));

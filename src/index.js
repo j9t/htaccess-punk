@@ -1,6 +1,11 @@
 import { readFile, readdir } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 
+const require = createRequire(import.meta.url);
+const { homepage, version } = require('../package.json');
+
+const USER_AGENT = `htaccess-punk/${version} (+${homepage})`;
 const SKIP_DIRS = new Set(['.git', 'node_modules']);
 const CONCURRENCY = 5;
 const TIMEOUT_MS = 10_000;
@@ -293,7 +298,7 @@ export async function checkUrl(url) {
         method: 'HEAD',
         redirect: 'manual',
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { 'User-Agent': 'htaccess-punk' },
+        headers: { 'User-Agent': USER_AGENT },
       });
 
       // Some servers (e.g., Medium) block HEAD requests—fall back to GET
@@ -302,7 +307,7 @@ export async function checkUrl(url) {
           method: 'GET',
           redirect: 'manual',
           signal: AbortSignal.timeout(TIMEOUT_MS),
-          headers: { 'User-Agent': 'htaccess-punk' },
+          headers: { 'User-Agent': USER_AGENT },
         });
       }
 
